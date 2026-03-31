@@ -1,12 +1,12 @@
 import type { NextConfig } from "next";
 
+const pagesBasePath = process.env.PAGES_BASE_PATH ?? "";
+
 const nextConfig: NextConfig = {
-  async redirects() {
-    return [
-      { source: "/birthdays", destination: "/small-events", permanent: true },
-      { source: "/corporate", destination: "/large-events", permanent: true },
-    ];
-  },
+  output: "export",
+  trailingSlash: true,
+  basePath: pagesBasePath,
+  assetPrefix: pagesBasePath || undefined,
   webpack(config) {
     config.module.rules.push({
       test: /\.(ttf|otf)$/i,
