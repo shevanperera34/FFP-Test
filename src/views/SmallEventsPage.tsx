@@ -231,26 +231,52 @@ function RotatingGoogleReviewCard({
         padding: isCompactLayout ? "16px 16px 14px" : "18px 18px 16px",
         display: "grid",
         gap: 12,
+        overflow: "hidden",
       }}
     >
       <div style={{ display: "grid", gap: 6 }}>
-        <div style={{ fontSize: "clamp(2.6rem, 5vw, 4.1rem)", lineHeight: 0.92, fontWeight: 950, fontFamily: titleFont }}>Google Reviews</div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 62, lineHeight: 0.9, fontWeight: 900 }}>5.0</span>
-          <span style={{ fontSize: 58, letterSpacing: "0.08em", color: "#F9CA24", lineHeight: 0.84 }}>★★★★★</span>
-          <span style={{ fontSize: 44, opacity: 0.78, lineHeight: 0.9 }}>(59)</span>
+        <div
+          style={{
+            fontSize: isCompactLayout ? "clamp(2rem, 10vw, 2.9rem)" : "clamp(2.6rem, 5vw, 4.1rem)",
+            lineHeight: 0.92,
+            fontWeight: 950,
+            fontFamily: titleFont,
+          }}
+        >
+          Google Reviews
+        </div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: isCompactLayout ? 8 : 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: isCompactLayout ? 48 : 62, lineHeight: 0.9, fontWeight: 900 }}>5.0</span>
+          <span style={{ fontSize: isCompactLayout ? 40 : 58, letterSpacing: "0.06em", color: "#F9CA24", lineHeight: 0.9 }}>★★★★★</span>
+          <span style={{ fontSize: isCompactLayout ? 32 : 44, opacity: 0.78, lineHeight: 0.9 }}>(59)</span>
         </div>
       </div>
 
       <div style={{ fontSize: "clamp(1rem, 1.25vw, 1.12rem)", lineHeight: 1.55, minHeight: 74 }}>{activeReview.quote}</div>
 
       <div style={{ display: "grid", gap: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div style={{ fontSize: 24, fontFamily: titleFont }}>{activeReview.author}</div>
-          <div style={{ fontSize: 16, opacity: 0.72 }}>{activeReview.time}</div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: isCompactLayout ? "flex-start" : "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: isCompactLayout ? "wrap" : "nowrap",
+          }}
+        >
+          <div style={{ fontSize: isCompactLayout ? 18 : 24, fontFamily: titleFont, minWidth: 0 }}>{activeReview.author}</div>
+          <div style={{ fontSize: isCompactLayout ? 14 : 16, opacity: 0.72, whiteSpace: isCompactLayout ? "normal" : "nowrap" }}>{activeReview.time}</div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: isCompactLayout ? "column" : "row",
+            alignItems: isCompactLayout ? "stretch" : "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
           <div style={{ display: "flex", gap: 6 }}>
             {reviews.map((_, index) => (
               <button
@@ -279,12 +305,14 @@ function RotatingGoogleReviewCard({
               borderRadius: 999,
               border: "1px solid rgba(255,255,255,0.22)",
               color: "#FFFFFF",
-              padding: "8px 12px",
-              fontSize: 14,
+              padding: isCompactLayout ? "10px 12px" : "8px 12px",
+              fontSize: isCompactLayout ? 13 : 14,
               fontWeight: 800,
               fontFamily: uiFont,
               textTransform: "uppercase",
               letterSpacing: "0.05em",
+              width: isCompactLayout ? "100%" : "auto",
+              textAlign: "center",
             }}
           >
             Read more

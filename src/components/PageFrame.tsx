@@ -9,6 +9,7 @@ import heroBgMain from "../assets/images/hero-bg-main.png";
 import heroBg2 from "../assets/images/hero-bg2.png";
 import heroBgPink from "../assets/images/hero-bg-pink.png";
 import logoMain from "../assets/My Logos and PFPs/Logo - fable face paint (1).png";
+import mossBackground from "../assets/Website Photos etc_/moss-5619857_1920.jpg";
 import IkigaiFooter from "./IkigaiFooter";
 import type { BundledImageSrc } from "../utils/encodePublicAssetPath";
 
@@ -61,7 +62,6 @@ export const unifiedHoverTransition =
 export const unifiedDarkButtonHover: React.CSSProperties = {
   transform: "translateY(-1px)",
   background: "#931C62",
-  borderColor: "#931C62",
   boxShadow: "0 14px 36px rgba(147, 28, 98, 0.32)",
   color: "#FFFFFF",
   opacity: 1,
@@ -70,7 +70,6 @@ export const unifiedDarkButtonHover: React.CSSProperties = {
 export const unifiedLightButtonHover: React.CSSProperties = {
   transform: "translateY(-1px)",
   background: "#D34AA8",
-  borderColor: "#931C62",
   boxShadow: "0 14px 30px rgba(211,74,168,0.30)",
   color: "#FFFFFF",
   opacity: 1,
@@ -79,7 +78,6 @@ export const unifiedLightButtonHover: React.CSSProperties = {
 export const unifiedTextButtonHover: React.CSSProperties = {
   transform: "translateY(-1px)",
   background: "#931C62",
-  borderColor: "#931C62",
   boxShadow: "0 10px 28px rgba(147, 28, 98, 0.22)",
   color: "#FFFFFF",
   opacity: 1,
@@ -579,6 +577,8 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
   );
 
   const [navCondensed, setNavCondensed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isCompactLayout = useIsCompactLayout();
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -631,7 +631,8 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
     if (typeof window === "undefined") return;
 
     const syncNavCondensed = () => {
-      setNavCondensed(window.scrollY > 72);
+      const heroScrollThreshold = isCompactLayout ? window.innerHeight * 0.52 : 72;
+      setNavCondensed(window.scrollY > heroScrollThreshold);
     };
 
     syncNavCondensed();
@@ -642,10 +643,61 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
       window.removeEventListener("scroll", syncNavCondensed);
       window.removeEventListener("resize", syncNavCondensed);
     };
+  }, [pageSlug, isCompactLayout]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
   }, [pageSlug]);
+
+  useEffect(() => {
+    if (!isCompactLayout) {
+      setMobileMenuOpen(false);
+    }
+  }, [isCompactLayout]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!isCompactLayout) {
+      document.body.style.removeProperty("overflow");
+      return;
+    }
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+      return;
+    }
+    document.body.style.removeProperty("overflow");
+    return () => {
+      document.body.style.removeProperty("overflow");
+    };
+  }, [mobileMenuOpen, isCompactLayout]);
 
   const navAlt = pageSlug !== "home" || navCondensed;
   const pageShellBackground = getPageShellBackground(pageSlug, backgroundOverride);
+  const navLogoHeight = isCompactLayout ? 40 : 50;
+  const showCenterNavLogo = pageSlug === "home" ? navCondensed : true;
+  const mobileNavReservedHeight = 72;
+  const navBookButtonStyle: React.CSSProperties = {
+    cursor: "pointer",
+    border: "1px solid #931C62",
+    borderRadius: 12,
+    padding: isCompactLayout ? "9px 14px" : "14px 32px",
+    minWidth: isCompactLayout ? undefined : 168,
+    fontWeight: 700,
+    fontSize: isCompactLayout ? 13 : 18,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    background: "#931C62",
+    color: brand.colors.paper,
+    fontFamily: uiFont,
+    boxShadow: "0 10px 24px rgba(147, 28, 98, 0.22)",
+    transform: "scale(1)",
+    transition: unifiedHoverTransition,
+  };
+
+  const handleNavSelect = (next: PageSlug) => {
+    setCurrent(next);
+    setMobileMenuOpen(false);
+  };
 
   return (
     <div
@@ -666,15 +718,18 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
 
       <div
         style={{
-          position: "sticky",
+          position: isCompactLayout ? "fixed" : "sticky",
           top: 0,
+          left: 0,
+          right: 0,
+          width: "100%",
           zIndex: 20,
-          backdropFilter: "blur(10px)",
-          background: "rgba(15,42,29,0.72)",
-          borderBottom: "1px solid rgba(255,255,255,0.10)",
+          backdropFilter: isCompactLayout ? undefined : "blur(10px)",
+          background: isCompactLayout ? "#050B16" : "rgba(15,42,29,0.72)",
+          borderBottom: isCompactLayout ? "1px solid rgba(255,255,255,0.14)" : "1px solid rgba(255,255,255,0.10)",
           ...(navAlt
             ? {
-                background: "rgba(10,12,20,0.82)",
+                background: isCompactLayout ? "#050B16" : "rgba(10,12,20,0.82)",
                 borderBottom: "1px solid rgba(255,255,255,0.14)",
                 boxShadow: "0 12px 32px rgba(0,0,0,0.35)",
               }
@@ -682,68 +737,273 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
           transition: "background 240ms ease, border-color 240ms ease, box-shadow 240ms ease",
         }}
       >
-        <div
-          style={{
-            width: "100%",
-            padding: "14px 18px",
-            display: "flex",
-            alignItems: "center",
-            ...(navAlt
-              ? {
-                  maxWidth: contentMaxWidth,
-                  margin: "0 auto",
-                  padding: "10px 18px",
-                  gap: 16,
-                  transition: "padding 240ms ease",
-                }
-              : {}),
-          }}
-        >
-          {navAlt ? (
-            <HoverButton
-              onClick={() => setCurrent("home")}
-              style={{
-                cursor: "pointer",
-                border: "none",
-                background: "transparent",
-                padding: 0,
-                display: "flex",
-                alignItems: "center",
-                transition: unifiedHoverTransition,
-              }}
-              hoverStyle={{ ...unifiedTextButtonHover, background: "transparent", borderColor: "transparent", boxShadow: "none", transform: "scale(1.03)" }}
-              ariaLabel="Go to home"
-            >
-              <img
-                src={bundledSrc(logoMain)}
-                alt=""
-                style={{
-                  height: 50,
-                  width: "auto",
-                  opacity: 0.95,
-                  filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.40))",
-                }}
-              />
-            </HoverButton>
-          ) : null}
+        {isCompactLayout ? (
+          <>
+            <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: navAlt ? "10px 14px" : "12px 14px" }}>
+              <div style={{ position: "relative", minHeight: 48, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <HoverButton
+                  onClick={() => setMobileMenuOpen((open) => !open)}
+                  style={{
+                    cursor: "pointer",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 12,
+                    width: 44,
+                    height: 44,
+                    background: "rgba(255,255,255,0.06)",
+                    color: "#FFFFFF",
+                    display: "grid",
+                    placeItems: "center",
+                    transition: unifiedHoverTransition,
+                  }}
+                  hoverStyle={unifiedDarkButtonHover}
+                  ariaLabel={mobileMenuOpen ? "Close menu" : "Open menu"}
+                >
+                  <span style={{ display: "grid", gap: 4 }}>
+                    <span
+                      style={{
+                        width: 18,
+                        height: 2,
+                        borderRadius: 999,
+                        background: "#FFFFFF",
+                        transform: mobileMenuOpen ? "translateY(6px) rotate(45deg)" : "none",
+                        transition: "transform 0.22s ease",
+                      }}
+                    />
+                    <span
+                      style={{
+                        width: 18,
+                        height: 2,
+                        borderRadius: 999,
+                        background: "#FFFFFF",
+                        opacity: mobileMenuOpen ? 0 : 1,
+                        transition: "opacity 0.2s ease",
+                      }}
+                    />
+                    <span
+                      style={{
+                        width: 18,
+                        height: 2,
+                        borderRadius: 999,
+                        background: "#FFFFFF",
+                        transform: mobileMenuOpen ? "translateY(-6px) rotate(-45deg)" : "none",
+                        transition: "transform 0.22s ease",
+                      }}
+                    />
+                  </span>
+                </HoverButton>
 
+                <HoverButton
+                  onClick={() => handleNavSelect("home")}
+                  style={{
+                    cursor: "pointer",
+                    border: "none",
+                    background: "transparent",
+                    padding: 0,
+                    position: "absolute",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    opacity: showCenterNavLogo ? 0.97 : 0,
+                    pointerEvents: showCenterNavLogo ? "auto" : "none",
+                    transition: "opacity 0.28s ease, transform 0.28s ease",
+                  }}
+                  hoverStyle={{ ...unifiedTextButtonHover, background: "transparent", border: "none", boxShadow: "none", transform: "translateX(-50%) scale(1.03)" }}
+                  ariaLabel="Go to home"
+                >
+                  <img
+                    src={bundledSrc(logoMain)}
+                    alt=""
+                    style={{
+                      height: 30,
+                      width: "auto",
+                      filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.40))",
+                    }}
+                  />
+                </HoverButton>
+
+                <HoverButton onClick={() => handleNavSelect("contact")} style={navBookButtonStyle} hoverStyle={{ ...unifiedBookButtonHover, transform: "scale(1.035)" }}>
+                  Book
+                </HoverButton>
+              </div>
+            </div>
+
+            {mobileMenuOpen ? (
+              <div
+                style={{
+                  position: "fixed",
+                  inset: 0,
+                  zIndex: 38,
+                  background: "#050712",
+                  display: "grid",
+                  gridTemplateRows: "auto 1fr",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: contentMaxWidth,
+                    width: "100%",
+                    margin: "0 auto",
+                    padding: "12px 14px",
+                    background: "#050B16",
+                    borderBottom: "1px solid rgba(255,255,255,0.14)",
+                  }}
+                >
+                  <div style={{ position: "relative", minHeight: 48, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <HoverButton
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={{
+                        cursor: "pointer",
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        borderRadius: 12,
+                        width: 44,
+                        height: 44,
+                        background: "rgba(255,255,255,0.08)",
+                        color: "#FFFFFF",
+                        display: "grid",
+                        placeItems: "center",
+                        transition: unifiedHoverTransition,
+                      }}
+                      hoverStyle={unifiedDarkButtonHover}
+                      ariaLabel="Close menu"
+                    >
+                      <span style={{ display: "grid", gap: 4 }}>
+                        <span style={{ width: 18, height: 2, borderRadius: 999, background: "#FFFFFF", transform: "translateY(6px) rotate(45deg)" }} />
+                        <span style={{ width: 18, height: 2, borderRadius: 999, background: "#FFFFFF", opacity: 0 }} />
+                        <span style={{ width: 18, height: 2, borderRadius: 999, background: "#FFFFFF", transform: "translateY(-6px) rotate(-45deg)" }} />
+                      </span>
+                    </HoverButton>
+
+                    <img
+                      src={bundledSrc(logoMain)}
+                      alt=""
+                      style={{
+                        position: "absolute",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        height: 30,
+                        width: "auto",
+                        opacity: 0.97,
+                        filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.40))",
+                      }}
+                    />
+
+                    <HoverButton onClick={() => handleNavSelect("contact")} style={navBookButtonStyle} hoverStyle={{ ...unifiedBookButtonHover, transform: "scale(1.035)" }}>
+                      Book
+                    </HoverButton>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gap: 12,
+                    gridTemplateRows: `repeat(${navItems.length}, minmax(0, 1fr))`,
+                    alignItems: "stretch",
+                    padding: "16px 18px calc(22px + env(safe-area-inset-bottom))",
+                    backgroundImage: `linear-gradient(180deg, rgba(8, 13, 22, 0.84) 0%, rgba(8, 13, 22, 0.90) 100%), url("${bundledSrc(mossBackground)}")`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    minHeight: 0,
+                  }}
+                >
+                  {navItems.map((p) => (
+                    <HoverButton
+                      key={p.slug}
+                      onClick={() => handleNavSelect(p.slug)}
+                      style={{
+                        cursor: "pointer",
+                        width: "100%",
+                        border: p.slug === pageSlug ? "1px solid #931C62" : "1px solid rgba(255,255,255,0.16)",
+                        borderRadius: 14,
+                        background: p.slug === pageSlug ? "#931C62" : "#161E2D",
+                        color: "#FFFFFF",
+                        fontWeight: p.slug === pageSlug ? 900 : 800,
+                        boxShadow: p.slug === pageSlug ? "0 14px 30px rgba(147, 28, 98, 0.34)" : "none",
+                        padding: "10px 16px",
+                        minHeight: 0,
+                        height: "100%",
+                        display: "grid",
+                        placeItems: "center",
+                        fontSize: 22,
+                        lineHeight: 1.1,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                        fontFamily: uiFont,
+                        textAlign: "center",
+                        transition: unifiedHoverTransition,
+                      }}
+                      hoverStyle={unifiedDarkButtonHover}
+                    >
+                      {p.label}
+                    </HoverButton>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </>
+        ) : (
           <div
             style={{
-              width: "50%",
+              width: "100%",
+              padding: "14px 18px",
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
               ...(navAlt
                 ? {
-                    width: "auto",
-                    flex: 1,
-                    justifyContent: "center",
-                    gap: 14,
+                    maxWidth: contentMaxWidth,
+                    margin: "0 auto",
+                    padding: "10px 18px",
+                    gap: 16,
+                    transition: "padding 240ms ease",
                   }
                 : {}),
             }}
           >
-            {navItems.map((p) => (
+            {navAlt ? (
+              <HoverButton
+                onClick={() => setCurrent("home")}
+                style={{
+                  cursor: "pointer",
+                  border: "none",
+                  background: "transparent",
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  transition: unifiedHoverTransition,
+                }}
+                hoverStyle={{ ...unifiedTextButtonHover, background: "transparent", border: "none", boxShadow: "none", transform: "scale(1.03)" }}
+                ariaLabel="Go to home"
+              >
+                <img
+                  src={bundledSrc(logoMain)}
+                  alt=""
+                  style={{
+                    height: navLogoHeight,
+                    width: "auto",
+                    opacity: 0.95,
+                    filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.40))",
+                  }}
+                />
+              </HoverButton>
+            ) : null}
+
+            <div
+              style={{
+                width: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                ...(navAlt
+                  ? {
+                      width: "auto",
+                      flex: 1,
+                      justifyContent: "center",
+                      gap: 14,
+                    }
+                  : {}),
+              }}
+            >
+              {navItems.map((p) => (
                 <HoverButton
                   key={p.slug}
                   onClick={() => setCurrent(p.slug)}
@@ -757,47 +1017,29 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
                     borderRadius: 999,
                     textDecoration: p.slug === pageSlug ? "underline" : "none",
                     textUnderlineOffset: 4,
-                    fontSize: 22,
+                    fontSize: navAlt ? 16 : 18,
                     textTransform: "uppercase",
                     fontFamily: uiFont,
                     textShadow: "none",
                     transition: unifiedHoverTransition,
-                    ...(navAlt ? { fontSize: 16 } : {}),
                   }}
                   hoverStyle={navTextGlowHover}
                 >
                   {p.label}
                 </HoverButton>
               ))}
+            </div>
+
+            {!navAlt ? <div style={{ flex: 1 }} /> : null}
+
+            <HoverButton onClick={() => setCurrent("contact")} style={navBookButtonStyle} hoverStyle={{ ...unifiedBookButtonHover, transform: "scale(1.035)" }}>
+              Book
+            </HoverButton>
           </div>
-
-          {!navAlt ? <div style={{ flex: 1 }} /> : null}
-
-          <HoverButton
-            onClick={() => setCurrent("contact")}
-            style={{
-              cursor: "pointer",
-              border: "1px solid #931C62",
-              borderRadius: 12,
-              padding: "14px 32px",
-              minWidth: 168,
-              fontWeight: 700,
-              fontSize: 18,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              background: "#931C62",
-              color: brand.colors.paper,
-              fontFamily: uiFont,
-              boxShadow: "0 10px 24px rgba(147, 28, 98, 0.22)",
-              transform: "scale(1)",
-              transition: unifiedHoverTransition,
-            }}
-            hoverStyle={{ ...unifiedBookButtonHover, transform: "scale(1.035)" }}
-          >
-            Book
-          </HoverButton>
-        </div>
+        )}
       </div>
+
+      {isCompactLayout ? <div aria-hidden style={{ height: mobileNavReservedHeight }} /> : null}
 
       {children}
 

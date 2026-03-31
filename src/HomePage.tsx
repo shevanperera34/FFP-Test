@@ -490,13 +490,13 @@ const HomePage: React.FC = () => {
       <section
         style={{
           position: "relative",
-          minHeight: "calc(100vh - 60px)",
+          minHeight: isCompactLayout ? "min(84svh, 760px)" : "calc(100vh - 60px)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "flex-start",
-          paddingTop: "8vh",
-          padding: "8vh 24px 80px",
+          paddingTop: isCompactLayout ? "3.5vh" : "8vh",
+          padding: isCompactLayout ? "3.5vh 14px 34px" : "8vh 24px 80px",
         }}
       >
         <div
@@ -504,8 +504,8 @@ const HomePage: React.FC = () => {
             position: "absolute",
             inset: 0,
             backgroundImage: `url("${encodePublicAssetPath(heroFrameIllustration)}")`,
-            backgroundSize: "110% auto",
-            backgroundPosition: "center -28px",
+            backgroundSize: isCompactLayout ? "cover" : "110% auto",
+            backgroundPosition: isCompactLayout ? "center top" : "center -28px",
             backgroundRepeat: "no-repeat",
             pointerEvents: "none",
             mixBlendMode: "normal",
@@ -522,17 +522,17 @@ const HomePage: React.FC = () => {
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
-            maxWidth: 900,
+            maxWidth: isCompactLayout ? 480 : 900,
           }}
         >
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex-end",
-              width: "35%",
+              alignItems: isCompactLayout ? "center" : "flex-end",
+              width: isCompactLayout ? "min(220px, 62vw)" : "35%",
               maxWidth: "min(720px, 92vw)",
-              marginBottom: 20,
+              marginBottom: isCompactLayout ? 16 : 20,
             }}
           >
             <img
@@ -549,7 +549,7 @@ const HomePage: React.FC = () => {
               style={{
                 fontFamily: "'Cinzel', serif",
                 fontWeight: 700,
-                fontSize: "clamp(0.55rem, 1.2vw, 0.7rem)",
+                fontSize: isCompactLayout ? "clamp(0.6rem, 2.8vw, 0.78rem)" : "clamp(0.55rem, 1.2vw, 0.7rem)",
                 color: "rgba(255,255,255,0.65)",
                 margin: "4px 0 0",
                 letterSpacing: "0.12em",
@@ -564,12 +564,13 @@ const HomePage: React.FC = () => {
             style={{
               fontFamily: '"Unifraktur Cook", serif',
               fontWeight: 900,
-              fontSize: "clamp(2.85rem, 8vw, 5rem)",
+              fontSize: isCompactLayout ? "clamp(2.2rem, 12vw, 3.65rem)" : "clamp(2.85rem, 8vw, 5rem)",
               color: "#FFFFFF",
-              margin: "0 0 6px",
-              lineHeight: 1.0,
+              margin: isCompactLayout ? "0" : "0 0 6px",
+              lineHeight: isCompactLayout ? 0.96 : 1.0,
               letterSpacing: "0.02em",
               textShadow: "0 4px 8px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.4)",
+              maxWidth: isCompactLayout ? "min(370px, 94vw)" : undefined,
             }}
           >
             {homeCopy.heroHeadline}
@@ -580,11 +581,11 @@ const HomePage: React.FC = () => {
               cursor: "pointer",
               border: "1px solid #931C62",
               borderRadius: 8,
-              marginTop: 28,
-              padding: "16px 40px",
-              minWidth: 220,
+              marginTop: isCompactLayout ? 18 : 28,
+              padding: isCompactLayout ? "11px 28px" : "16px 40px",
+              minWidth: isCompactLayout ? 172 : 220,
               fontWeight: 700,
-              fontSize: 20,
+              fontSize: isCompactLayout ? 15 : 20,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
               background: "#931C62",
@@ -603,14 +604,14 @@ const HomePage: React.FC = () => {
 
       <section
         style={{
-          padding: "96px 0",
+          padding: isCompactLayout ? "62px 0 52px" : "96px 0",
           background: "transparent",
-          minHeight: "calc(100vh - 72px)",
+          minHeight: isCompactLayout ? "auto" : "calc(100vh - 72px)",
           display: "flex",
           alignItems: "center",
         }}
       >
-        <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 24px" }}>
+        <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: isCompactLayout ? "0 16px" : "0 24px" }}>
           <div
             style={{
               display: "grid",
@@ -624,7 +625,7 @@ const HomePage: React.FC = () => {
               style={{
                 paddingTop: 0,
                 maxWidth: 560,
-                marginTop: -10,
+                marginTop: isCompactLayout ? 0 : -10,
               }}
             >
               <div
@@ -639,19 +640,30 @@ const HomePage: React.FC = () => {
               >
                 {homeCopy.introHeadline}
               </div>
-              <div style={{ marginTop: 24, maxWidth: 640, fontSize: 18, lineHeight: 1.8, opacity: 0.9, textShadow: "0 2px 8px rgba(0,0,0,0.34)" }}>
+              <div
+                style={{
+                  marginTop: isCompactLayout ? 18 : 24,
+                  maxWidth: 640,
+                  fontSize: isCompactLayout ? 16 : 18,
+                  lineHeight: isCompactLayout ? 1.62 : 1.8,
+                  opacity: 0.9,
+                  textShadow: "0 2px 8px rgba(0,0,0,0.34)",
+                }}
+              >
                 {homeCopy.introParagraph}
               </div>
 
               <div
                 data-native-cursor="true"
                 style={{
-                  marginTop: 32,
+                  marginTop: isCompactLayout ? 24 : 32,
                   display: "flex",
-                  alignItems: "center",
-                  gap: 44,
-                  padding: "32px 36px 32px 48px",
-                  minHeight: 220,
+                  flexDirection: isCompactLayout ? "column" : "row",
+                  alignItems: isCompactLayout ? "center" : "center",
+                  textAlign: isCompactLayout ? "center" : "left",
+                  gap: isCompactLayout ? 14 : 44,
+                  padding: isCompactLayout ? "18px 14px" : "32px 36px 32px 48px",
+                  minHeight: isCompactLayout ? 0 : 220,
                   borderRadius: 18,
                   background: "#F2F0EE",
                   color: brand.colors.ink,
@@ -666,19 +678,30 @@ const HomePage: React.FC = () => {
                   src={encodePublicAssetPath(milenaImg)}
                   alt="Milena, lead artist"
                   style={{
-                    width: 126,
-                    height: 126,
+                    width: isCompactLayout ? 108 : 126,
+                    height: isCompactLayout ? 108 : 126,
                     borderRadius: 999,
                     objectFit: "cover",
                     objectPosition: "center 30%",
-                    transform: "scale(1.32)",
+                    transform: isCompactLayout ? "scale(1.08)" : "scale(1.32)",
                     border: "1px solid rgba(255,255,255,0.18)",
                     boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
                   }}
                 />
-                <div style={{ display: "grid", gap: 10, paddingLeft: 6 }}>
-                  <div style={{ fontSize: 18, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.75 }}>{homeCopy.artistEyebrow}</div>
-                  <div style={{ fontSize: 34, fontWeight: 950, lineHeight: 1.02 }}>{homeCopy.artistName}</div>
+                <div style={{ display: "grid", gap: 8, paddingLeft: isCompactLayout ? 0 : 6, justifyItems: isCompactLayout ? "center" : "start" }}>
+                  <div
+                    style={{
+                      fontSize: isCompactLayout ? 12 : 18,
+                      letterSpacing: "0.12em",
+                      textTransform: "uppercase",
+                      opacity: 0.75,
+                    }}
+                  >
+                    {homeCopy.artistEyebrow}
+                  </div>
+                  <div style={{ fontSize: isCompactLayout ? 30 : 34, fontWeight: 950, lineHeight: 1.02, maxWidth: "100%", wordBreak: "break-word" }}>
+                    {homeCopy.artistName}
+                  </div>
                 </div>
               </div>
             </div>
@@ -686,11 +709,11 @@ const HomePage: React.FC = () => {
             <div
               style={{
                 display: "grid",
-                gap: 24,
+                gap: isCompactLayout ? 16 : 24,
                 width: "100%",
                 maxWidth: 420,
                 justifySelf: isCompactLayout ? "stretch" : "end",
-                paddingTop: 8,
+                paddingTop: isCompactLayout ? 0 : 8,
               }}
             >
               <Card
