@@ -382,11 +382,11 @@ function ServiceGalleryPanel({
           cardWidth={isCompactLayout ? 122 : 98}
           cardHeight={isCompactLayout ? 98 : 115}
           visibleCount={isCompactLayout ? 4 : 6}
-          className="services-gallery-panel"
+          className={isCompactLayout ? "services-gallery-panel ffp-gallery-display" : "services-gallery-panel"}
         />
       ) : null}
 
-      {showFirstTimeHint ? (
+      {showFirstTimeHint && !isCompactLayout ? (
         <div
           aria-hidden
           style={{
