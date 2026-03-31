@@ -46,6 +46,8 @@ import { encodePublicAssetPath, type BundledImageSrc } from "./utils/encodePubli
 
 const homeGalleryImages = [galleryImage1, galleryImage2, galleryImage3, galleryImage4, galleryImage5, galleryImage6, galleryImage7, galleryImage8];
 const beltAwardImages = [award1, award2, award3, awardWinner2026, award4, award5, award6];
+const mobileAwardTopRow = [award1, award2, award3];
+const mobileAwardBottomRow = [award4, award5, award6];
 const corporateLogoImages = [
   { src: corporateLogo1, scale: 1.08 },
   { src: corporateLogo2, scale: 1.08 },
@@ -915,27 +917,104 @@ const HomePage: React.FC = () => {
                     width: "100%",
                     display: "flex",
                     alignItems: "flex-end",
-                    justifyContent: isCompactLayout ? "flex-start" : "space-between",
+                    justifyContent: isCompactLayout ? "center" : "space-between",
                     gap: isCompactLayout ? 14 : 20,
-                    overflowX: isCompactLayout ? "auto" : "visible",
+                    overflowX: isCompactLayout ? "hidden" : "visible",
                     padding: isCompactLayout ? "0 8px 6px" : "0 18px 8px",
                   }}
                 >
-                  {beltAwardImages.map((src, index) => (
-                    <img
-                      key={`award-belt-${index}`}
-                      src={encodePublicAssetPath(src)}
-                      alt={`Award badge ${index + 1}`}
+                  {isCompactLayout ? (
+                    <div
                       style={{
-                        flex: "0 0 auto",
-                        height: src === beltAwardImages[3] ? (isCompactLayout ? 104 : 162) : isCompactLayout ? 78 : 122,
-                        width: "auto",
-                        objectFit: "contain",
-                        display: "block",
-                        filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
+                        width: "100%",
+                        display: "grid",
+                        gap: 10,
+                        padding: "0 4px",
                       }}
-                    />
-                  ))}
+                    >
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                          alignItems: "end",
+                          justifyItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        {mobileAwardTopRow.map((src, index) => (
+                          <img
+                            key={`award-mobile-top-${index}`}
+                            src={encodePublicAssetPath(src)}
+                            alt={`Award badge ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              maxWidth: 124,
+                              maxHeight: 88,
+                              objectFit: "contain",
+                              display: "block",
+                              filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <img
+                          src={encodePublicAssetPath(awardWinner2026)}
+                          alt="Best rated winner badge"
+                          style={{
+                            width: "auto",
+                            height: 112,
+                            objectFit: "contain",
+                            display: "block",
+                            filter: "drop-shadow(0 10px 14px rgba(0,0,0,0.28))",
+                          }}
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                          alignItems: "end",
+                          justifyItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        {mobileAwardBottomRow.map((src, index) => (
+                          <img
+                            key={`award-mobile-bottom-${index}`}
+                            src={encodePublicAssetPath(src)}
+                            alt={`Award badge ${index + 4}`}
+                            style={{
+                              width: "100%",
+                              maxWidth: 124,
+                              maxHeight: 88,
+                              objectFit: "contain",
+                              display: "block",
+                              filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    beltAwardImages.map((src, index) => (
+                      <img
+                        key={`award-belt-${index}`}
+                        src={encodePublicAssetPath(src)}
+                        alt={`Award badge ${index + 1}`}
+                        style={{
+                          flex: "0 0 auto",
+                          height: src === beltAwardImages[3] ? 162 : 122,
+                          width: "auto",
+                          objectFit: "contain",
+                          display: "block",
+                          filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
+                        }}
+                      />
+                    ))
+                  )}
                 </div>
               </div>
 
