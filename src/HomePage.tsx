@@ -59,6 +59,28 @@ const corporateLogoImages = [
   { src: corporateLogo8, scale: 1.0 },
 ];
 
+const travelAreas = [
+  "Toronto",
+  "Vaughan",
+  "Richmond Hill",
+  "Markham",
+  "Mississauga",
+  "Brampton",
+  "Oakville",
+  "Burlington",
+  "Milton",
+  "Etobicoke",
+  "North York",
+  "Scarborough",
+  "Pickering",
+  "Ajax",
+  "Whitby",
+  "Oshawa",
+  "Aurora",
+  "Newmarket",
+  "King City",
+];
+
 const trustIndicators = [
   {
     icon: "shield-plus",
@@ -453,7 +475,7 @@ function HomeGalleryRotationViewport({
 }
 
 const homeCopy = {
-  locationLabel: "from Vaughan, ON",
+  locationLabel: "across the GTA",
   heroHeadline: "Premium & Enchanted Event face art experience",
   heroCtaLabel: "Book Now",
   introHeadline: "Face painting, but make it event art.",
@@ -466,11 +488,12 @@ const homeCopy = {
   smallEventsDescription: "Perfect for smaller guest lists and high-quality designs. Book a single artist for a clean, magical setup.",
   smallEventsCtaLabel: "Explore Small Events",
   largeEventsEyebrow: "Corporate · Festivals · Public events",
-  largeEventsBadge: "Most Popular",
   largeEventsTitle: "Large Events",
   largeEventsDescription: "Need higher throughput or multiple artists? This path is built for scale, structure, and crowd flow.",
   largeEventsCtaLabel: "Explore Large Events",
   helperNote: "Not sure which one fits? Start with the closest match, and the booking form will sort the details.",
+  travelAreasTitle: "Serving Toronto and the Greater Toronto Area",
+  travelAreasDescription: "Available for birthdays, private parties, corporate events, and festivals across these cities:",
   trustSectionTitle: "What clients rely on",
   gallerySectionTitle: "Real work from real events.",
   gallerySectionDescription: "A quick look at the detailed work and atmosphere of Fable Face Paint events.",
@@ -481,7 +504,7 @@ const HomePage: React.FC = () => {
   const isCompactLayout = useIsCompactLayout();
 
   const goTo = useCallback(
-    (slug: "birthdays" | "corporate" | "contact") => {
+    (slug: "birthdays" | "corporate" | "contact" | "about") => {
       router.push(canonicalPathBySlug[slug]);
     },
     [router]
@@ -532,7 +555,7 @@ const HomePage: React.FC = () => {
               display: "flex",
               flexDirection: "column",
               alignItems: isCompactLayout ? "center" : "flex-end",
-              width: isCompactLayout ? "min(220px, 62vw)" : "35%",
+              width: isCompactLayout ? "min(176px, 48vw)" : "28%",
               maxWidth: "min(720px, 92vw)",
               marginBottom: isCompactLayout ? 16 : 20,
             }}
@@ -555,7 +578,7 @@ const HomePage: React.FC = () => {
                 color: "rgba(255,255,255,0.65)",
                 margin: "4px 0 0",
                 letterSpacing: "0.12em",
-                textTransform: "capitalize",
+                textTransform: "none",
                 textShadow: "0 2px 6px rgba(0,0,0,0.42), 0 6px 18px rgba(0,0,0,0.22)",
               }}
             >
@@ -655,56 +678,69 @@ const HomePage: React.FC = () => {
                 {homeCopy.introParagraph}
               </div>
 
-              <div
-                data-native-cursor="true"
-                style={{
-                  marginTop: isCompactLayout ? 24 : 32,
-                  display: "flex",
-                  flexDirection: isCompactLayout ? "column" : "row",
-                  alignItems: isCompactLayout ? "center" : "center",
-                  textAlign: isCompactLayout ? "center" : "left",
-                  gap: isCompactLayout ? 14 : 44,
-                  padding: isCompactLayout ? "18px 14px" : "32px 36px 32px 48px",
-                  minHeight: isCompactLayout ? 0 : 220,
-                  borderRadius: 18,
-                  background: "#F2F0EE",
-                  color: brand.colors.ink,
-                  border: "1px solid rgba(11,11,11,0.10)",
-                  boxShadow: "0 18px 44px rgba(0,0,0,0.18)",
-                  backdropFilter: "blur(10px)",
-                  width: "100%",
-                  maxWidth: 860,
-                }}
-              >
-                <img
-                  src={encodePublicAssetPath(milenaImg)}
-                  alt="Milena, lead artist"
+              <div data-native-cursor="true" style={{ marginTop: isCompactLayout ? 24 : 32 }}>
+                <HoverButton
+                  onClick={() => goTo("about")}
+                  ariaLabel="Meet your artist and learn more about Fable Face Paint"
                   style={{
-                    width: isCompactLayout ? 108 : 126,
-                    height: isCompactLayout ? 108 : 126,
-                    borderRadius: 999,
-                    objectFit: "cover",
-                    objectPosition: "center 30%",
-                    transform: isCompactLayout ? "scale(1.08)" : "scale(1.32)",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: isCompactLayout ? "column" : "row",
+                    alignItems: isCompactLayout ? "center" : "center",
+                    textAlign: isCompactLayout ? "center" : "left",
+                    gap: isCompactLayout ? 14 : 44,
+                    padding: isCompactLayout ? "18px 14px" : "32px 36px 32px 48px",
+                    minHeight: isCompactLayout ? 0 : 220,
+                    borderRadius: 18,
+                    background: "#F2F0EE",
+                    color: brand.colors.ink,
+                    border: "1px solid rgba(11,11,11,0.10)",
+                    boxShadow: "0 18px 44px rgba(0,0,0,0.18)",
+                    backdropFilter: "blur(10px)",
+                    width: "100%",
+                    maxWidth: 860,
+                    transition: unifiedHoverTransition,
                   }}
-                />
-                <div style={{ display: "grid", gap: 8, paddingLeft: isCompactLayout ? 0 : 6, justifyItems: isCompactLayout ? "center" : "start" }}>
-                  <div
+                  hoverStyle={{
+                    transform: "translateY(-2px)",
+                    background: "#FFFFFF",
+                    boxShadow: "0 20px 52px rgba(0,0,0,0.22)",
+                    color: brand.colors.ink,
+                  }}
+                >
+                  <img
+                    src={encodePublicAssetPath(milenaImg)}
+                    alt="Milena, lead artist"
                     style={{
-                      fontSize: isCompactLayout ? 12 : 18,
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      opacity: 0.75,
+                      width: isCompactLayout ? 108 : 126,
+                      height: isCompactLayout ? 108 : 126,
+                      borderRadius: 999,
+                      objectFit: "cover",
+                      objectPosition: "center 30%",
+                      transform: isCompactLayout ? "scale(1.08)" : "scale(1.32)",
+                      border: "1px solid rgba(255,255,255,0.18)",
+                      boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
                     }}
-                  >
-                    {homeCopy.artistEyebrow}
+                  />
+                  <div style={{ display: "grid", gap: 8, paddingLeft: isCompactLayout ? 0 : 6, justifyItems: isCompactLayout ? "center" : "start" }}>
+                    <div
+                      style={{
+                        fontSize: isCompactLayout ? 12 : 18,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        opacity: 0.75,
+                      }}
+                    >
+                      {homeCopy.artistEyebrow}
+                    </div>
+                    <div style={{ fontSize: isCompactLayout ? 30 : 34, fontWeight: 950, lineHeight: 1.02, maxWidth: "100%", wordBreak: "break-word" }}>
+                      {homeCopy.artistName}
+                    </div>
+                    <div style={{ fontSize: isCompactLayout ? 11 : 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.65, fontFamily: uiFont }}>
+                      Learn more about Milena and the team
+                    </div>
                   </div>
-                  <div style={{ fontSize: isCompactLayout ? 30 : 34, fontWeight: 950, lineHeight: 1.02, maxWidth: "100%", wordBreak: "break-word" }}>
-                    {homeCopy.artistName}
-                  </div>
-                </div>
+                </HoverButton>
               </div>
             </div>
 
@@ -739,9 +775,9 @@ const HomePage: React.FC = () => {
                   style={{
                     marginTop: 14,
                     cursor: "pointer",
-                    border: "1px solid rgba(11,11,11,0.14)",
-                    background: "rgba(255,255,255,0.28)",
-                    color: brand.colors.ink,
+                    border: "1px solid #15554E",
+                    background: "linear-gradient(135deg, #1A7D6C 0%, #15554E 100%)",
+                    color: "#FFFFFF",
                     borderRadius: 12,
                     padding: "12px 14px",
                     fontFamily: uiFont,
@@ -750,9 +786,16 @@ const HomePage: React.FC = () => {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 8,
+                    boxShadow: "0 10px 24px rgba(21,85,78,0.24)",
                     transition: unifiedHoverTransition,
                   }}
-                  hoverStyle={unifiedDarkButtonHover}
+                  hoverStyle={{
+                    transform: "translateY(-1px)",
+                    background: "#15554E",
+                    boxShadow: "0 14px 30px rgba(21,85,78,0.34)",
+                    color: "#FFFFFF",
+                    opacity: 1,
+                  }}
                 >
                   {homeCopy.smallEventsCtaLabel} <span aria-hidden>→</span>
                 </HoverButton>
@@ -766,27 +809,8 @@ const HomePage: React.FC = () => {
                   border: "1px solid rgba(211,74,168,0.65)",
                   boxShadow: "0 18px 44px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(211,74,168,0.18)",
                   backdropFilter: "blur(10px)",
-                  paddingBottom: 52,
                 }}
               >
-                <span
-                  style={{
-                    position: "absolute",
-                    bottom: -14,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    fontSize: 13,
-                    fontWeight: 900,
-                    padding: "6px 14px",
-                    borderRadius: 999,
-                    background: "rgba(147, 28, 98, 0.24)",
-                    border: "1px solid rgba(211,74,168,0.65)",
-                    opacity: 0.96,
-                  }}
-                >
-                  {homeCopy.largeEventsBadge}
-                </span>
-
                 <div style={{ fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74 }}>{homeCopy.largeEventsEyebrow}</div>
 
                 <div style={{ marginTop: 12, fontSize: 24, fontWeight: 950, fontFamily: titleFont }}>{homeCopy.largeEventsTitle}</div>
@@ -797,9 +821,9 @@ const HomePage: React.FC = () => {
                   style={{
                     marginTop: 14,
                     cursor: "pointer",
-                    border: "1px solid rgba(11,11,11,0.14)",
-                    background: "rgba(255,255,255,0.28)",
-                    color: brand.colors.ink,
+                    border: "1px solid #931C62",
+                    background: "linear-gradient(135deg, #B61C78 0%, #8E185A 100%)",
+                    color: "#FFFFFF",
                     borderRadius: 12,
                     padding: "12px 14px",
                     fontFamily: uiFont,
@@ -808,6 +832,7 @@ const HomePage: React.FC = () => {
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 8,
+                    boxShadow: "0 10px 24px rgba(147,28,98,0.24)",
                     transition: unifiedHoverTransition,
                   }}
                   hoverStyle={unifiedDarkButtonHover}
@@ -829,6 +854,50 @@ const HomePage: React.FC = () => {
             }}
           >
             {homeCopy.helperNote}
+          </div>
+
+          <div
+            data-native-cursor="true"
+            style={{
+              marginTop: 18,
+              borderRadius: 18,
+              border: "1px solid rgba(255,255,255,0.16)",
+              background: "rgba(6,12,18,0.44)",
+              boxShadow: "0 14px 30px rgba(0,0,0,0.24)",
+              padding: isCompactLayout ? "18px 14px" : "22px 20px",
+              display: "grid",
+              gap: 12,
+              maxWidth: 900,
+            }}
+          >
+            <div style={{ fontSize: isCompactLayout ? 12 : 13, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.76, fontFamily: uiFont }}>
+              Travel Areas
+            </div>
+            <div style={{ fontSize: "clamp(1.45rem, 2.2vw, 2rem)", lineHeight: 1.05, fontWeight: 950, fontFamily: titleFont }}>
+              {homeCopy.travelAreasTitle}
+            </div>
+            <p style={{ margin: 0, fontSize: isCompactLayout ? 14 : 15, lineHeight: 1.6, opacity: 0.9 }}>{homeCopy.travelAreasDescription}</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {travelAreas.map((city) => (
+                <span
+                  key={city}
+                  style={{
+                    borderRadius: 999,
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    background: "rgba(255,255,255,0.06)",
+                    padding: "6px 10px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.03em",
+                    color: "#F5F7FA",
+                    fontFamily: uiFont,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {city}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -1154,17 +1223,20 @@ const HomePage: React.FC = () => {
                       height: isCompactLayout ? 62 : 74,
                       display: "grid",
                       placeItems: "center",
+                      overflow: "hidden",
                     }}
                   >
                     <img
                       src={encodePublicAssetPath(logo.src)}
                       alt={`Partner logo ${index + 1}`}
                       style={{
-                        height: isCompactLayout ? 42 : 52,
-                        width: "auto",
-                        maxWidth: "96%",
+                        width: isCompactLayout ? 112 : 132,
+                        height: isCompactLayout ? 42 : 50,
+                        maxWidth: "100%",
                         objectFit: "contain",
                         display: "block",
+                        transform: `scale(${logo.scale})`,
+                        transformOrigin: "center center",
                       }}
                     />
                   </div>

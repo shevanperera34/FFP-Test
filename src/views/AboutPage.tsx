@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
+import GtaServiceMap from "../components/GtaServiceMap";
 import PageFrame, {
   HoverButton,
   canonicalPathBySlug,
@@ -208,6 +209,30 @@ const AboutPage: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section style={{ padding: isCompactLayout ? "4px 0 20px" : "8px 0 24px" }}>
+          <div
+            data-native-cursor="true"
+            style={{
+              borderRadius: 18,
+              border: "1px solid rgba(255,255,255,0.16)",
+              background: "rgba(6,12,18,0.50)",
+              boxShadow: "0 12px 26px rgba(0,0,0,0.24)",
+              padding: isCompactLayout ? "14px 12px" : "18px 16px",
+              display: "grid",
+              gap: 10,
+            }}
+          >
+            <div style={{ fontSize: 12, letterSpacing: "0.11em", textTransform: "uppercase", opacity: 0.74, fontFamily: uiFont }}>Where We Service</div>
+            <h2 style={{ margin: 0, fontSize: "clamp(1.7rem, 2.6vw, 2.65rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>
+              Serving Toronto and surrounding GTA cities
+            </h2>
+            <p style={{ margin: 0, fontSize: "clamp(0.96rem, 1.05vw, 1.03rem)", lineHeight: 1.58, opacity: 0.9 }}>
+              Hover a city to highlight its service area on the map. Active areas scale up, display their name, and reveal an image fill.
+            </p>
+            <GtaServiceMap isCompactLayout={isCompactLayout} />
           </div>
         </section>
 

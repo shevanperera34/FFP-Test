@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import PageFrame, {
   HoverButton,
   HoneyBookEmbed,
-  SectionWrap,
   SmallEventsSection,
   brand,
   canonicalPathBySlug,
@@ -1021,14 +1020,13 @@ const SmallEventsPage: React.FC = () => {
                 Service Spotlight
               </div>
               <SmallEventsServiceSpotlight isCompactLayout={isCompactLayout} />
+              <div style={{ paddingTop: isCompactLayout ? 6 : 12 }}>
+                <HoneyBookEmbed kind="privateParty" embedId="HB_PRIVATE_PARTY_FORM_ID" tag="private_party" />
+              </div>
             </div>
           </SmallEventsSection>
         </div>
       </div>
-
-      <SectionWrap title="Birthday / Private Party Inquiry" subtitle="Routes into HoneyBook (separate funnels).">
-        <HoneyBookEmbed kind="privateParty" embedId="HB_PRIVATE_PARTY_FORM_ID" tag="private_party" />
-      </SectionWrap>
     </PageFrame>
   );
 };

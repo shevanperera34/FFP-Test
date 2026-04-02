@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import PageFrame, {
   HoverButton,
@@ -19,7 +19,6 @@ import { encodePublicAssetPath } from "../utils/encodePublicAssetPath";
 const ContactPage: React.FC = () => {
   const router = useRouter();
   const isCompactLayout = useIsCompactLayout();
-  const [showUnsureForm, setShowUnsureForm] = useState(false);
 
   return (
     <PageFrame pageSlug="contact" pageTitle="Book an Artist Now | Fable Face Paint">
@@ -66,7 +65,7 @@ const ContactPage: React.FC = () => {
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: isCompactLayout ? "1fr" : "minmax(0, 1fr) auto minmax(0, 1fr)",
+              gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(2, minmax(0, 1fr))",
               gap: 14,
               alignItems: "start",
             }}
@@ -106,38 +105,6 @@ const ContactPage: React.FC = () => {
               >
                 View Small Events
               </HoverButton>
-              <HoneyBookEmbed kind="privateParty" embedId="HB_PRIVATE_PARTY_FORM_ID" tag="private_party" />
-            </div>
-
-            <div
-              style={{
-                alignSelf: isCompactLayout ? "stretch" : "center",
-                justifySelf: "center",
-                display: "grid",
-                width: isCompactLayout ? "100%" : "auto",
-              }}
-            >
-              <HoverButton
-                onClick={() => setShowUnsureForm((current) => !current)}
-                style={{
-                  cursor: "pointer",
-                  border: "1px solid #931C62",
-                  borderRadius: 12,
-                  padding: "10px 14px",
-                  fontWeight: 800,
-                  fontSize: 13,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  background: showUnsureForm ? "#931C62" : "rgba(255,255,255,0.06)",
-                  color: "#FFFFFF",
-                  fontFamily: uiFont,
-                  transition: unifiedHoverTransition,
-                  minWidth: isCompactLayout ? undefined : 132,
-                }}
-                hoverStyle={unifiedDarkButtonHover}
-              >
-                {"I'm Not Sure"}
-              </HoverButton>
             </div>
 
             <div
@@ -175,137 +142,13 @@ const ContactPage: React.FC = () => {
               >
                 View Large Events
               </HoverButton>
-              <HoneyBookEmbed kind="corporate" embedId="HB_CORPORATE_FORM_ID" tag="corporate" />
             </div>
           </div>
         </section>
 
-        {showUnsureForm ? (
-          <section style={{ padding: isCompactLayout ? "8px 0 6px" : "12px 0 8px", display: "grid", gap: 12 }}>
-            <div style={{ display: "grid", gap: 6, textAlign: "center", justifyItems: "center" }}>
-              <h2 style={{ margin: 0, fontSize: "clamp(1.8rem, 2.8vw, 2.9rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>General Inquiry</h2>
-              <p style={{ margin: 0, maxWidth: 780, fontSize: "clamp(0.96rem, 1.12vw, 1.03rem)", lineHeight: 1.58, opacity: 0.9 }}>
-                Not sure which option fits? Share a few details and we’ll guide you to the best booking path.
-              </p>
-            </div>
-
-          <div
-            data-native-cursor="true"
-            style={{
-              borderRadius: 18,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(6,12,18,0.50)",
-              boxShadow: "0 14px 28px rgba(0,0,0,0.24)",
-              padding: "16px",
-              display: "grid",
-              gap: 10,
-            }}
-          >
-            <div style={{ fontSize: 12, letterSpacing: "0.11em", textTransform: "uppercase", opacity: 0.72, fontFamily: uiFont }}>Not Sure Yet</div>
-            <form
-              onSubmit={(event) => event.preventDefault()}
-              style={{
-                display: "grid",
-                gap: 10,
-                gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(2, minmax(0, 1fr))",
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Full name"
-                style={{
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#FFFFFF",
-                  padding: "10px 12px",
-                  fontSize: 14,
-                  fontFamily: uiFont,
-                }}
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                style={{
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#FFFFFF",
-                  padding: "10px 12px",
-                  fontSize: 14,
-                  fontFamily: uiFont,
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Event date (optional)"
-                style={{
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#FFFFFF",
-                  padding: "10px 12px",
-                  fontSize: 14,
-                  fontFamily: uiFont,
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Estimated guest count"
-                style={{
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#FFFFFF",
-                  padding: "10px 12px",
-                  fontSize: 14,
-                  fontFamily: uiFont,
-                }}
-              />
-              <textarea
-                placeholder="Tell us a bit about your event"
-                rows={4}
-                style={{
-                  gridColumn: isCompactLayout ? "auto" : "1 / -1",
-                  width: "100%",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "#FFFFFF",
-                  padding: "10px 12px",
-                  fontSize: 14,
-                  fontFamily: uiFont,
-                  resize: "vertical",
-                }}
-              />
-              <button
-                type="submit"
-                style={{
-                  gridColumn: isCompactLayout ? "auto" : "1 / -1",
-                  cursor: "pointer",
-                  border: "1px solid #931C62",
-                  borderRadius: 12,
-                  padding: "11px 14px",
-                  fontWeight: 800,
-                  fontSize: 13,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  background: "#931C62",
-                  color: "#FFFFFF",
-                  fontFamily: uiFont,
-                  transition: unifiedHoverTransition,
-                }}
-              >
-                Submit General Inquiry (mock)
-              </button>
-            </form>
-          </div>
-          </section>
-        ) : null}
+        <section style={{ padding: isCompactLayout ? "8px 0 6px" : "12px 0 8px", display: "grid", gap: 12 }}>
+          <HoneyBookEmbed kind="general" embedId="xEOtC5kzhFIudav6ugX8" tag="booking_request" />
+        </section>
       </div>
     </PageFrame>
   );

@@ -292,43 +292,65 @@ export function SmallEventsSection({
   );
 }
 
-export function HoneyBookEmbed({ kind, embedId, tag }: { kind: "privateParty" | "corporate"; embedId: string; tag: string }) {
+const sharedBookingFormId = "xEOtC5kzhFIudav6ugX8";
+const sharedBookingFormName = "Booking Request Form";
+const sharedBookingFormUrl = `https://api.leadconnectorhq.com/widget/form/${sharedBookingFormId}`;
+
+export function HoneyBookEmbed({
+  kind,
+  embedId,
+  tag,
+}: {
+  kind: "privateParty" | "corporate" | "general";
+  embedId: string;
+  tag: string;
+}) {
+  const isCompactLayout = useIsCompactLayout();
+
   useEffect(() => {
-    track("form_view", { kind, tag });
-  }, [kind, tag]);
+    track("form_view", { kind, tag, provider: "leadconnector", formId: sharedBookingFormId, legacyEmbedId: embedId });
+  }, [embedId, kind, tag]);
+
+  const layoutIframeId = `inline-${sharedBookingFormId}-${tag}`;
+  const iframeHeightPx = isCompactLayout ? 2500 : 2100;
 
   return (
-    <Card style={{ background: "#F2F0EE" }}>
-      <div style={{ display: "grid", gap: 12 }}>
-        <div style={{ fontWeight: 950, fontSize: 16, color: brand.colors.ink }}>
-          {kind === "corporate" ? "Corporate Inquiry (HoneyBook)" : "Private Party Inquiry (HoneyBook)"}
-        </div>
-        <div style={{ fontSize: 13, opacity: 0.85, color: brand.colors.ink }}>
-          Embed ID: <b>{embedId}</b> | Tag: <b>{tag}</b>
-        </div>
-        <div style={{ fontSize: 13, opacity: 0.85, color: brand.colors.ink }}>
-          Replace this block with the real HoneyBook embed snippet. This is just the structure.
-        </div>
-        <HoverButton
-          onClick={() => track("form_submit_mock", { kind, tag })}
-          style={{
-            cursor: "pointer",
-            borderRadius: 12,
-            border: "none",
-            padding: "12px 14px",
-            fontWeight: 900,
-            fontFamily: uiFont,
-            background: brand.colors.magenta,
-            color: brand.colors.paper,
-            boxShadow: "0 10px 24px rgba(211,74,168,0.20)",
-            transition: unifiedHoverTransition,
-          }}
-          hoverStyle={unifiedLightButtonHover}
-        >
-          Submit (mock)
-        </HoverButton>
-      </div>
-    </Card>
+    <div
+      data-native-cursor="true"
+      style={{
+        width: "100%",
+        maxWidth: 620,
+        margin: "0 auto",
+        lineHeight: 0,
+      }}
+    >
+      <iframe
+        src={sharedBookingFormUrl}
+        style={{
+          width: "100%",
+          height: iframeHeightPx,
+          border: "none",
+          borderRadius: 0,
+          background: "transparent",
+          display: "block",
+        }}
+        scrolling="no"
+        id={layoutIframeId}
+        data-layout="{'id':'INLINE'}"
+        data-trigger-type="alwaysShow"
+        data-trigger-value=""
+        data-activation-type="alwaysActivated"
+        data-activation-value=""
+        data-deactivation-type="neverDeactivate"
+        data-deactivation-value=""
+        data-form-name={sharedBookingFormName}
+        data-height={String(iframeHeightPx)}
+        data-layout-iframe-id={layoutIframeId}
+        data-form-id={sharedBookingFormId}
+        title={sharedBookingFormName}
+        loading="lazy"
+      />
+    </div>
   );
 }
 
@@ -676,6 +698,8 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
   const navLogoHeight = isCompactLayout ? 40 : 50;
   const showCenterNavLogo = pageSlug === "home" ? navCondensed : true;
   const mobileNavReservedHeight = 72;
+  const forceFixedHomeDesktopNav = pageSlug === "home" && !isCompactLayout;
+  const desktopNavReservedHeight = 78;
   const navBookButtonStyle: React.CSSProperties = {
     cursor: "pointer",
     border: "1px solid #931C62",
@@ -718,12 +742,12 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
 
       <div
         style={{
-          position: isCompactLayout ? "fixed" : "sticky",
+          position: forceFixedHomeDesktopNav ? "fixed" : isCompactLayout ? "fixed" : "sticky",
           top: 0,
           left: 0,
           right: 0,
           width: "100%",
-          zIndex: 20,
+          zIndex: 40,
           backdropFilter: isCompactLayout ? undefined : "blur(10px)",
           background: isCompactLayout ? "#050B16" : "rgba(15,42,29,0.72)",
           borderBottom: isCompactLayout ? "1px solid rgba(255,255,255,0.14)" : "1px solid rgba(255,255,255,0.10)",
@@ -950,10 +974,8 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
               alignItems: "center",
               ...(navAlt
                 ? {
-                    maxWidth: contentMaxWidth,
-                    margin: "0 auto",
-                    padding: "10px 18px",
-                    gap: 16,
+                    padding: "10px 20px",
+                    gap: 18,
                     transition: "padding 240ms ease",
                   }
                 : {}),
@@ -969,6 +991,7 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
                   padding: 0,
                   display: "flex",
                   alignItems: "center",
+                  marginRight: 10,
                   transition: unifiedHoverTransition,
                 }}
                 hoverStyle={{ ...unifiedTextButtonHover, background: "transparent", border: "none", boxShadow: "none", transform: "scale(1.03)" }}
@@ -997,8 +1020,9 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
                   ? {
                       width: "auto",
                       flex: 1,
-                      justifyContent: "center",
-                      gap: 14,
+                      justifyContent: "flex-start",
+                      gap: 24,
+                      paddingLeft: 8,
                     }
                   : {}),
               }}
@@ -1013,11 +1037,11 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
                     background: "transparent",
                     color: p.slug === pageSlug ? brand.colors.paper : "rgba(255,255,255,0.80)",
                     fontWeight: p.slug === pageSlug ? 900 : 700,
-                    padding: "8px 10px",
+                    padding: "8px 12px",
                     borderRadius: 999,
                     textDecoration: p.slug === pageSlug ? "underline" : "none",
                     textUnderlineOffset: 4,
-                    fontSize: navAlt ? 16 : 18,
+                    fontSize: 18,
                     textTransform: "uppercase",
                     fontFamily: uiFont,
                     textShadow: "none",
@@ -1039,6 +1063,7 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
         )}
       </div>
 
+      {forceFixedHomeDesktopNav ? <div aria-hidden style={{ height: desktopNavReservedHeight }} /> : null}
       {isCompactLayout ? <div aria-hidden style={{ height: mobileNavReservedHeight }} /> : null}
 
       {children}

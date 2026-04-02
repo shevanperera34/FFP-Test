@@ -46,6 +46,7 @@ const GalleryPage: React.FC = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [activeTag, setActiveTag] = useState<string>("All");
+  const instagramEmbedHeight = isCompactLayout ? 760 : 980;
 
   useEffect(() => {
     const requestedTag = searchParams?.get("tag")?.trim() ?? "All";
@@ -145,7 +146,7 @@ const GalleryPage: React.FC = () => {
                 overflow: "hidden",
                 border: "1px solid rgba(255,255,255,0.16)",
                 background: "rgba(10,10,10,0.38)",
-                minHeight: isCompactLayout ? 470 : 620,
+                minHeight: instagramEmbedHeight,
               }}
             >
               <iframe
@@ -155,7 +156,7 @@ const GalleryPage: React.FC = () => {
                 style={{
                   width: "100%",
                   height: "100%",
-                  minHeight: isCompactLayout ? 470 : 620,
+                  minHeight: instagramEmbedHeight,
                   border: "none",
                   display: "block",
                   background: "#101216",
@@ -175,9 +176,9 @@ const GalleryPage: React.FC = () => {
                     setActiveTag(tag);
                     const path = pathname ?? "/gallery";
                     if (tag === "All") {
-                      router.replace(path);
+                      router.replace(path, { scroll: false });
                     } else {
-                      router.replace(`${path}?${new URLSearchParams({ tag }).toString()}`);
+                      router.replace(`${path}?${new URLSearchParams({ tag }).toString()}`, { scroll: false });
                     }
                   }}
                   style={{
