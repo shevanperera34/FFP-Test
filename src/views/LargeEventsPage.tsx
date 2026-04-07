@@ -1,6 +1,13 @@
 "use client";
 
 import React, { useCallback, useMemo, useState } from "react";
+import { stegaClean } from "@sanity/client/stega";
+import { pickCms } from "@/lib/sanity/pickCms";
+import type {
+  SanityLargeEventsClientLogo,
+  SanityLargeEventsPageDoc,
+  SanityLargeEventsPricingCard,
+} from "@/lib/sanity/siteQueries";
 import { useRouter } from "next/navigation";
 import PageFrame, {
   HoverButton,
@@ -629,9 +636,51 @@ function LargeEventsServiceSpotlight({ isCompactLayout }: { isCompactLayout: boo
   );
 }
 
-const LargeEventsPage: React.FC = () => {
+type LargeEventsPageProps = {
+  sanityLargeEvents?: SanityLargeEventsPageDoc | null;
+};
+
+const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = null }) => {
   const router = useRouter();
   const isCompactLayout = useIsCompactLayout();
+
+  const heroPartnerLogos = useMemo(() => {
+    const cms = sanityLargeEvents?.clientLogos;
+    const fromCms =
+      cms
+        ?.map((img: SanityLargeEventsClientLogo | null | undefined) => img?.asset?.url)
+        .filter((u: string | null | undefined): u is string => typeof u === "string" && u.trim().length > 0)
+        .map((url: string) => ({ src: url })) ?? [];
+    if (fromCms.length >= 2) return fromCms;
+    return corporateLogoImages;
+  }, [sanityLargeEvents]);
+
+  const heroEyebrow = pickCms(sanityLargeEvents?.eyebrow, "Large Events");
+  const heroTitle = pickCms(sanityLargeEvents?.pageTitle, "Built for scale, speed, and high guest volume.");
+  const heroIntro = pickCms(
+    sanityLargeEvents?.intro,
+    "Best for corporate events, festivals, and public activations where flow matters and multi-artist support may be needed.",
+  );
+
+  const displayPricingCards = useMemo((): PricingDisplayCard[] => {
+    const cms = sanityLargeEvents?.pricingCards;
+    if (!cms?.length) return pricingCards;
+    return cms.map((card: SanityLargeEventsPricingCard | null, index: number) => {
+      const fallback = pricingCards[index] ?? pricingCards[0];
+      const cmsBest = (card?.bestFor ?? []).filter((b: unknown): b is string => typeof b === "string");
+      const cmsInc = (card?.includes ?? []).filter((b: unknown): b is string => typeof b === "string");
+      return {
+        name: pickCms(card?.packageName, fallback.name),
+        price: pickCms(card?.price, fallback.price),
+        subprice: pickCms(card?.subprice, fallback.subprice),
+        bestFor: cmsBest.some((b: string) => stegaClean(b).trim().length > 0) ? cmsBest : fallback.bestFor,
+        includes: cmsInc.some((b: string) => stegaClean(b).trim().length > 0) ? cmsInc : fallback.includes,
+        badge: pickCms(card?.badge, fallback.badge ?? ""),
+        footnote: pickCms(card?.footnote, fallback.footnote ?? ""),
+      };
+    });
+  }, [sanityLargeEvents]);
+
   const eventProofPool = useMemo(
     () => (allEventPics.length > 0 ? allEventPics : [largeEventsHeroBackground]),
     []
@@ -676,12 +725,12 @@ const LargeEventsPage: React.FC = () => {
               }}
             >
               <div style={{ display: "grid", gap: 22, alignContent: "start", justifyItems: "start" }}>
-                <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.75, fontFamily: uiFont }}>Large Events</div>
+                <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.75, fontFamily: uiFont }}>{heroEyebrow}</div>
                 <div style={{ fontSize: "clamp(2.2rem, 4.2vw, 4.5rem)", lineHeight: 0.98, fontWeight: 950, fontFamily: titleFont, maxWidth: 860 }}>
-                  Built for scale, speed, and high guest volume.
+                  {heroTitle}
                 </div>
                 <div style={{ fontSize: "clamp(1rem, 1.28vw, 1.2rem)", lineHeight: 1.6, color: "rgba(242,247,252,0.92)", maxWidth: 860 }}>
-                  Best for corporate events, festivals, and public activations where flow matters and multi-artist support may be needed.
+                  {heroIntro}
                 </div>
               </div>
 
@@ -694,7 +743,7 @@ const LargeEventsPage: React.FC = () => {
                   marginTop: isCompactLayout ? 8 : 190,
                 }}
               >
-                <RotatingCorporateLogoPair logos={corporateLogoImages} isCompactLayout={isCompactLayout} />
+                <RotatingCorporateLogoPair logos={heroPartnerLogos} isCompactLayout={isCompactLayout} />
               </div>
             </div>
           </div>
@@ -734,7 +783,7 @@ const LargeEventsPage: React.FC = () => {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: 28, alignItems: "stretch" }}>
-                {pricingCards.map((card, index) => {
+                {displayPricingCards.map((card, index) => {
                   const featured = Boolean(card.badge);
                   const cardVisualImage = moodImages[(index + 2) % moodImages.length];
                   return (

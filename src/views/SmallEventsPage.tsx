@@ -1,6 +1,10 @@
 "use client";
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import { stegaClean } from "@sanity/client/stega";
+import { pickCms } from "@/lib/sanity/pickCms";
+import type { SmallEventsVisualAttrs } from "@/lib/sanity/smallEventsVisualAttrs";
+import type { SanitySmallEventsPageDoc, SanitySmallEventsPricingCard } from "@/lib/sanity/siteQueries";
 import { useRouter } from "next/navigation";
 import PageFrame, {
   HoverButton,
@@ -679,9 +683,44 @@ function SmallEventsServiceSpotlight({ isCompactLayout }: { isCompactLayout: boo
   );
 }
 
-const SmallEventsPage: React.FC = () => {
+type SmallEventsPageProps = {
+  sanitySmallEvents?: SanitySmallEventsPageDoc | null;
+  smallEventsVisualAttrs?: SmallEventsVisualAttrs;
+};
+
+const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
+  sanitySmallEvents = null,
+  smallEventsVisualAttrs = {},
+}) => {
   const router = useRouter();
   const isCompactLayout = useIsCompactLayout();
+
+  const heroEyebrow = pickCms(sanitySmallEvents?.eyebrow, "Small Events");
+  const heroTitle = pickCms(sanitySmallEvents?.pageTitle, "Private celebrations, made premium.");
+  const heroIntro = pickCms(
+    sanitySmallEvents?.intro,
+    "This setup is designed for birthdays and intimate celebrations where guests want detailed art and the event host wants a smooth, stress-free experience.",
+  );
+
+  const displayPricingCards = useMemo((): PricingDisplayCard[] => {
+    const cms = sanitySmallEvents?.pricingCards;
+    if (!cms?.length) return pricingCards;
+    return cms.map((card: SanitySmallEventsPricingCard | null, index: number) => {
+      const fallback = pricingCards[index] ?? pricingCards[0];
+      const cmsBest = (card?.bestFor ?? []).filter((b: unknown): b is string => typeof b === "string");
+      const cmsInc = (card?.includes ?? []).filter((b: unknown): b is string => typeof b === "string");
+      return {
+        name: pickCms(card?.packageName, fallback.name),
+        price: pickCms(card?.price, fallback.price),
+        subprice: pickCms(card?.subprice, fallback.subprice),
+        bestFor: cmsBest.some((b: string) => stegaClean(b).trim().length > 0) ? cmsBest : fallback.bestFor,
+        includes: cmsInc.some((b: string) => stegaClean(b).trim().length > 0) ? cmsInc : fallback.includes,
+        badge: pickCms(card?.badge, fallback.badge ?? ""),
+        footnote: pickCms(card?.footnote, fallback.footnote ?? ""),
+      };
+    });
+  }, [sanitySmallEvents]);
+
   const eventProofPool = useMemo(
     () => (horizontalEventImages.length > 0 ? horizontalEventImages : [smallEventsHeroBackground]),
     []
@@ -725,12 +764,23 @@ const SmallEventsPage: React.FC = () => {
               }}
             >
               <div style={{ display: "grid", gap: 22, alignContent: "start", justifyItems: "start" }}>
-                <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.75, fontFamily: uiFont }}>Small Events</div>
-                <div style={{ fontSize: "clamp(2.2rem, 4.2vw, 4.5rem)", lineHeight: 0.98, fontWeight: 950, fontFamily: titleFont, maxWidth: 760 }}>
-                  Private celebrations, made premium.
+                <div
+                  style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.75, fontFamily: uiFont }}
+                  data-sanity={smallEventsVisualAttrs.eyebrow}
+                >
+                  {heroEyebrow}
                 </div>
-                <div style={{ fontSize: "clamp(1rem, 1.28vw, 1.2rem)", lineHeight: 1.6, color: "rgba(242,247,252,0.92)", maxWidth: 720 }}>
-                  This setup is designed for birthdays and intimate celebrations where guests want detailed art and the event host wants a smooth, stress-free experience.
+                <div
+                  style={{ fontSize: "clamp(2.2rem, 4.2vw, 4.5rem)", lineHeight: 0.98, fontWeight: 950, fontFamily: titleFont, maxWidth: 760 }}
+                  data-sanity={smallEventsVisualAttrs.pageTitle}
+                >
+                  {heroTitle}
+                </div>
+                <div
+                  style={{ fontSize: "clamp(1rem, 1.28vw, 1.2rem)", lineHeight: 1.6, color: "rgba(242,247,252,0.92)", maxWidth: 720 }}
+                  data-sanity={smallEventsVisualAttrs.intro}
+                >
+                  {heroIntro}
                 </div>
               </div>
 
@@ -781,8 +831,11 @@ const SmallEventsPage: React.FC = () => {
                   Placeholder paragraph: add a short description of what is included in each package and how clients should choose.
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: 28, alignItems: "stretch" }}>
-                {pricingCards.map((card, index) => {
+              <div
+                style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: 28, alignItems: "stretch" }}
+                data-sanity={smallEventsVisualAttrs.pricingCards}
+              >
+                {displayPricingCards.map((card, index) => {
                   const featured = Boolean(card.badge);
                   const cardVisualImage = moodImages[index % moodImages.length];
                   return (

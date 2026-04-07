@@ -61,7 +61,7 @@ export const unifiedHoverTransition =
 export const unifiedDarkButtonHover: React.CSSProperties = {
   transform: "translateY(-1px)",
   background: "#931C62",
-  borderColor: "#931C62",
+  border: "1px solid #931C62",
   boxShadow: "0 14px 36px rgba(147, 28, 98, 0.32)",
   color: "#FFFFFF",
   opacity: 1,
@@ -70,7 +70,7 @@ export const unifiedDarkButtonHover: React.CSSProperties = {
 export const unifiedLightButtonHover: React.CSSProperties = {
   transform: "translateY(-1px)",
   background: "#D34AA8",
-  borderColor: "#931C62",
+  border: "1px solid #931C62",
   boxShadow: "0 14px 30px rgba(211,74,168,0.30)",
   color: "#FFFFFF",
   opacity: 1,
@@ -79,7 +79,7 @@ export const unifiedLightButtonHover: React.CSSProperties = {
 export const unifiedTextButtonHover: React.CSSProperties = {
   transform: "translateY(-1px)",
   background: "#931C62",
-  borderColor: "#931C62",
+  border: "1px solid #931C62",
   boxShadow: "0 10px 28px rgba(147, 28, 98, 0.22)",
   color: "#FFFFFF",
   opacity: 1,
@@ -711,7 +711,7 @@ export default function PageFrame({ pageSlug, children, backgroundOverride, page
                 alignItems: "center",
                 transition: unifiedHoverTransition,
               }}
-              hoverStyle={{ ...unifiedTextButtonHover, background: "transparent", borderColor: "transparent", boxShadow: "none", transform: "scale(1.03)" }}
+              hoverStyle={{ ...unifiedTextButtonHover, background: "transparent", border: "none", boxShadow: "none", transform: "scale(1.03)" }}
               ariaLabel="Go to home"
             >
               <img

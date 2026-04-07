@@ -18,10 +18,26 @@ import {
   serviceAssetEntries,
 } from "../generated/imageManifests";
 import { encodePublicAssetPath, type BundledImageSrc } from "../utils/encodePublicAssetPath";
+import type { SanityGalleryImageDoc } from "@/lib/sanity/siteQueries";
 
 type GalleryItem = {
-  src: BundledImageSrc;
+  src: BundledImageSrc | string;
   tag: string;
+};
+
+function galleryItemSrc(src: GalleryItem["src"]): string {
+  if (typeof src === "string" && (src.startsWith("http://") || src.startsWith("https://"))) return src;
+  return encodePublicAssetPath(src as BundledImageSrc);
+}
+
+const GALLERY_CATEGORY_LABELS: Record<string, string> = {
+  "face-painting": "Face Painting",
+  "body-painting": "Body Painting",
+  "bling-bar": "Bling Bar",
+  "balloon-twisting": "Balloon Twisting",
+  "belly-painting": "Belly Painting",
+  "event-photos": "Event Photos",
+  other: "Other",
 };
 
 const serviceItems: GalleryItem[] = serviceAssetEntries.map(({ key: filePath, url: imageUrl }) => {
@@ -36,25 +52,50 @@ const serviceItems: GalleryItem[] = serviceAssetEntries.map(({ key: filePath, ur
 const verticalItems: GalleryItem[] = eventPicVerticalUrls.map((src) => ({ src, tag: "Event Photos" }));
 const horizontalItems: GalleryItem[] = eventPicHorizontalUrls.map((src) => ({ src, tag: "Event Photos" }));
 
-const allGalleryItems = [...serviceItems, ...verticalItems, ...horizontalItems];
-const galleryTags = ["All", ...Array.from(new Set(allGalleryItems.map((item) => item.tag)))];
+const bundledGalleryItems = [...serviceItems, ...verticalItems, ...horizontalItems];
 const instagramProfileUrl = "https://www.instagram.com/fablefacepaint/?hl=en";
 
-const GalleryPage: React.FC = () => {
+type GalleryPageProps = {
+  sanityGallery?: SanityGalleryImageDoc[] | null;
+};
+
+const GalleryPage: React.FC<GalleryPageProps> = ({ sanityGallery = null }) => {
   const isCompactLayout = useIsCompactLayout();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [activeTag, setActiveTag] = useState<string>("All");
 
+  const sanityGalleryItems = useMemo((): GalleryItem[] => {
+    if (!sanityGallery?.length) return [];
+    const out: GalleryItem[] = [];
+    for (const doc of sanityGallery) {
+      const url = doc.image?.asset?.url;
+      if (!url) continue;
+      const rawCat = doc.category?.trim() || "other";
+      const tag =
+        GALLERY_CATEGORY_LABELS[rawCat] ??
+        rawCat.replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+      out.push({src: url, tag});
+    }
+    return out;
+  }, [sanityGallery]);
+
+  const allGalleryItems = sanityGalleryItems.length > 0 ? sanityGalleryItems : bundledGalleryItems;
+
+  const galleryTags = useMemo(
+    () => ["All", ...Array.from(new Set(allGalleryItems.map((item) => item.tag)))],
+    [allGalleryItems],
+  );
+
   useEffect(() => {
     const requestedTag = searchParams?.get("tag")?.trim() ?? "All";
     setActiveTag(galleryTags.includes(requestedTag) ? requestedTag : "All");
-  }, [searchParams]);
+  }, [searchParams, galleryTags]);
 
   const filteredItems = useMemo(
     () => (activeTag === "All" ? allGalleryItems : allGalleryItems.filter((item) => item.tag === activeTag)),
-    [activeTag]
+    [activeTag, allGalleryItems],
   );
 
   return (
@@ -223,7 +264,7 @@ const GalleryPage: React.FC = () => {
                 }}
               >
                 <img
-                  src={encodePublicAssetPath(item.src)}
+                  src={galleryItemSrc(item.src)}
                   alt={`${item.tag} image ${index + 1}`}
                   style={{
                     width: "100%",

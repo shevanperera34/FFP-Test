@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import PageFrame, {
   HoverButton,
@@ -16,6 +16,13 @@ import heroBg2 from "../assets/images/hero-bg2.png";
 import milenaImg from "../assets/Website Photos etc_/IMG_0316 (3).jpg";
 import { eventPicHorizontalUrls } from "../generated/imageManifests";
 import { encodePublicAssetPath } from "../utils/encodePublicAssetPath";
+import { pickCms } from "@/lib/sanity/pickCms";
+import type {
+  SanityAboutPageDoc,
+  SanityAboutProcessRow,
+  SanityAboutTestimonialRow,
+  SanityAboutValueRow,
+} from "@/lib/sanity/siteQueries";
 
 const aboutGalleryImages = eventPicHorizontalUrls;
 
@@ -64,9 +71,48 @@ const aboutGoogleReviews = [
   },
 ];
 
-const AboutPage: React.FC = () => {
+type AboutPageProps = {
+  sanityAbout?: SanityAboutPageDoc | null;
+};
+
+const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
   const router = useRouter();
   const isCompactLayout = useIsCompactLayout();
+
+  const heroEyebrow = pickCms(sanityAbout?.eyebrow, "About us");
+  const heroTitle = pickCms(sanityAbout?.pageTitle, "Meet the artist behind Fable Face Paint.");
+  const heroIntro = pickCms(
+    sanityAbout?.intro,
+    "Professional face painting, glitter tattoos, and event art across Toronto & the GTA—blending magical design with reliable logistics. From intimate parties to high-volume events, the goal is memorable guest moments without stress on your day.",
+  );
+
+  const displayValues = useMemo((): typeof values => {
+    const cms = sanityAbout?.values;
+    if (!cms?.length) return values;
+    return cms.map((v: SanityAboutValueRow | null, i: number) => ({
+      title: pickCms(v?.title, values[i]?.title ?? ""),
+      text: pickCms(v?.text, values[i]?.text ?? ""),
+    }));
+  }, [sanityAbout]);
+
+  const displayProcessSteps = useMemo((): typeof processSteps => {
+    const cms = sanityAbout?.processSteps;
+    if (!cms?.length) return processSteps;
+    return cms.map((v: SanityAboutProcessRow | null, i: number) => ({
+      title: pickCms(v?.title, processSteps[i]?.title ?? ""),
+      desc: pickCms(v?.description, processSteps[i]?.desc ?? ""),
+    }));
+  }, [sanityAbout]);
+
+  const displayReviews = useMemo((): typeof aboutGoogleReviews => {
+    const cms = sanityAbout?.testimonials;
+    if (!cms?.length) return aboutGoogleReviews;
+    return cms.map((v: SanityAboutTestimonialRow | null, i: number) => ({
+      quote: pickCms(v?.quote, aboutGoogleReviews[i]?.quote ?? ""),
+      author: pickCms(v?.author, aboutGoogleReviews[i]?.author ?? ""),
+      time: pickCms(v?.time, aboutGoogleReviews[i]?.time ?? ""),
+    }));
+  }, [sanityAbout]);
 
   return (
     <PageFrame pageSlug="about" pageTitle="About Us | Fable Face Paint">
@@ -93,7 +139,7 @@ const AboutPage: React.FC = () => {
             }}
           >
             <div style={{ display: "grid", gap: 16 }}>
-              <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74, fontFamily: uiFont }}>About us</div>
+              <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74, fontFamily: uiFont }}>{heroEyebrow}</div>
               <h1
                 style={{
                   margin: 0,
@@ -103,10 +149,10 @@ const AboutPage: React.FC = () => {
                   fontFamily: titleFont,
                 }}
               >
-                Meet the artist behind Fable Face Paint.
+                {heroTitle}
               </h1>
               <p style={{ margin: 0, maxWidth: 760, fontSize: "clamp(1rem, 1.24vw, 1.17rem)", lineHeight: 1.62, color: "rgba(242,247,252,0.92)" }}>
-                Professional face painting, glitter tattoos, and event art across Toronto & the GTA—blending magical design with reliable logistics. From intimate parties to high-volume events, the goal is memorable guest moments without stress on your day.
+                {heroIntro}
               </p>
               <div style={{ paddingTop: 2 }}>
                 <HoverButton
@@ -163,9 +209,9 @@ const AboutPage: React.FC = () => {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: 14 }}>
-              {values.map((value) => (
+              {displayValues.map((value, valueIndex) => (
                 <div
-                  key={value.title}
+                  key={`${value.title}-${valueIndex}`}
                   data-native-cursor="true"
                   style={{
                     borderRadius: 18,
@@ -189,9 +235,9 @@ const AboutPage: React.FC = () => {
           <div style={{ display: "grid", gap: 14 }}>
             <h2 style={{ margin: 0, fontSize: "clamp(1.95rem, 3.1vw, 3.1rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>How We Work With You</h2>
             <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(5, minmax(0, 1fr))", gap: 12 }}>
-              {processSteps.map((step, index) => (
+              {displayProcessSteps.map((step, index) => (
                 <div
-                  key={step.title}
+                  key={`${step.title}-${index}`}
                   data-native-cursor="true"
                   style={{
                     borderRadius: 16,
@@ -281,7 +327,7 @@ const AboutPage: React.FC = () => {
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: 10 }}>
-              {aboutGoogleReviews.map((review) => (
+              {displayReviews.map((review) => (
                 <div
                   key={`${review.author}-${review.time}`}
                   style={{

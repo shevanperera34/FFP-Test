@@ -15,11 +15,39 @@ import PageFrame, {
 } from "../components/PageFrame";
 import heroBg2 from "../assets/images/hero-bg2.png";
 import { encodePublicAssetPath } from "../utils/encodePublicAssetPath";
+import { pickCms } from "@/lib/sanity/pickCms";
+import type { SanityContactPageDoc } from "@/lib/sanity/siteQueries";
 
-const ContactPage: React.FC = () => {
+const defaultHeroEyebrow = "Book an artist now";
+const defaultHeroTitle = "Looking to book face painters in Toronto?";
+const defaultHeroIntro =
+  "Request a date for Fable Face Paint—small parties, corporate events, and large activations across the GTA. Pick the path that fits your event; you’ll get a clear funnel and fast replies.";
+const defaultSmallTitle = "Birthday / Private Party";
+const defaultSmallBody =
+  "For birthdays and intimate celebrations where premium design quality is the priority.";
+const defaultLargeTitle = "Corporate / Public Events";
+const defaultLargeBody =
+  "For activations, festivals, and higher guest volume where throughput and structure are critical.";
+const defaultUnsureHelper =
+  "Not sure which option fits? Share a few details and we’ll guide you to the best booking path.";
+
+type ContactPageProps = {
+  sanityContact?: SanityContactPageDoc | null;
+};
+
+const ContactPage: React.FC<ContactPageProps> = ({ sanityContact = null }) => {
   const router = useRouter();
   const isCompactLayout = useIsCompactLayout();
   const [showUnsureForm, setShowUnsureForm] = useState(false);
+
+  const heroEyebrow = pickCms(sanityContact?.eyebrow, defaultHeroEyebrow);
+  const heroTitle = pickCms(sanityContact?.pageTitle, defaultHeroTitle);
+  const heroIntro = pickCms(sanityContact?.intro, defaultHeroIntro);
+  const smallCardTitle = pickCms(sanityContact?.smallCardTitle, defaultSmallTitle);
+  const smallCardBody = pickCms(sanityContact?.smallCardBody, defaultSmallBody);
+  const largeCardTitle = pickCms(sanityContact?.largeCardTitle, defaultLargeTitle);
+  const largeCardBody = pickCms(sanityContact?.largeCardBody, defaultLargeBody);
+  const unsureHelper = pickCms(sanityContact?.unsureHelper, defaultUnsureHelper);
 
   return (
     <PageFrame pageSlug="contact" pageTitle="Book an Artist Now | Fable Face Paint">
@@ -43,7 +71,7 @@ const ContactPage: React.FC = () => {
               gap: 14,
             }}
           >
-            <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74, fontFamily: uiFont }}>Book an artist now</div>
+            <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74, fontFamily: uiFont }}>{heroEyebrow}</div>
             <h1
               style={{
                 margin: 0,
@@ -54,10 +82,10 @@ const ContactPage: React.FC = () => {
                 maxWidth: 860,
               }}
             >
-              Looking to book face painters in Toronto?
+              {heroTitle}
             </h1>
             <p style={{ margin: 0, maxWidth: 820, fontSize: "clamp(0.98rem, 1.18vw, 1.1rem)", lineHeight: 1.62, color: "rgba(242,247,252,0.92)" }}>
-              Request a date for Fable Face Paint—small parties, corporate events, and large activations across the GTA. Pick the path that fits your event; you’ll get a clear funnel and fast replies.
+              {heroIntro}
             </p>
           </div>
         </section>
@@ -84,8 +112,8 @@ const ContactPage: React.FC = () => {
               }}
             >
               <div style={{ fontSize: 12, letterSpacing: "0.11em", textTransform: "uppercase", opacity: 0.72, fontFamily: uiFont }}>Small Events</div>
-              <div style={{ fontSize: "clamp(1.8rem, 2.8vw, 2.8rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>Birthday / Private Party</div>
-              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, opacity: 0.9 }}>For birthdays and intimate celebrations where premium design quality is the priority.</p>
+              <div style={{ fontSize: "clamp(1.8rem, 2.8vw, 2.8rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>{smallCardTitle}</div>
+              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, opacity: 0.9 }}>{smallCardBody}</p>
               <HoverButton
                 onClick={() => router.push(canonicalPathBySlug.birthdays)}
                 style={{
@@ -153,8 +181,8 @@ const ContactPage: React.FC = () => {
               }}
             >
               <div style={{ fontSize: 12, letterSpacing: "0.11em", textTransform: "uppercase", opacity: 0.72, fontFamily: uiFont }}>Large Events</div>
-              <div style={{ fontSize: "clamp(1.8rem, 2.8vw, 2.8rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>Corporate / Public Events</div>
-              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, opacity: 0.9 }}>For activations, festivals, and higher guest volume where throughput and structure are critical.</p>
+              <div style={{ fontSize: "clamp(1.8rem, 2.8vw, 2.8rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>{largeCardTitle}</div>
+              <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, opacity: 0.9 }}>{largeCardBody}</p>
               <HoverButton
                 onClick={() => router.push(canonicalPathBySlug.corporate)}
                 style={{
@@ -184,9 +212,7 @@ const ContactPage: React.FC = () => {
           <section style={{ padding: isCompactLayout ? "8px 0 6px" : "12px 0 8px", display: "grid", gap: 12 }}>
             <div style={{ display: "grid", gap: 6, textAlign: "center", justifyItems: "center" }}>
               <h2 style={{ margin: 0, fontSize: "clamp(1.8rem, 2.8vw, 2.9rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>General Inquiry</h2>
-              <p style={{ margin: 0, maxWidth: 780, fontSize: "clamp(0.96rem, 1.12vw, 1.03rem)", lineHeight: 1.58, opacity: 0.9 }}>
-                Not sure which option fits? Share a few details and we’ll guide you to the best booking path.
-              </p>
+              <p style={{ margin: 0, maxWidth: 780, fontSize: "clamp(0.96rem, 1.12vw, 1.03rem)", lineHeight: 1.58, opacity: 0.9 }}>{unsureHelper}</p>
             </div>
 
           <div

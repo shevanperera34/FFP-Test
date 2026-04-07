@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { stegaClean } from "@sanity/client/stega";
+import { pickCms } from "@/lib/sanity/pickCms";
+import type { SanityServiceDetailSection, SanityServiceDoc, SanityServiceFaqRow } from "@/lib/sanity/siteQueries";
 import { useRouter } from "next/navigation";
 import PageFrame, {
   HoverButton,
@@ -35,6 +38,8 @@ type ServiceEntry = {
   sections: ServiceSection[];
   importantInfo: string[];
   faq: ServiceFaqItem[];
+  /** Sanity CDN URLs — used instead of bundled folder images when present. */
+  remoteImageUrls?: string[];
 };
 
 const imagesByFolder = Object.entries(serviceAssetModuleRecord).reduce<Record<string, BundledImageSrc[]>>(
@@ -322,12 +327,55 @@ const servicePreviewIndexById: Partial<Record<ServiceEntry["id"], number>> = {
   "body-painting": 1,
 };
 
+function mapSanityServicesToEntries(docs: SanityServiceDoc[]): ServiceEntry[] {
+  return docs.map((doc) => {
+    const slug = doc.slug?.current?.trim() || doc._id.replace(/^drafts\./, "");
+    const hard = services.find((h) => h.id === slug);
+    const folder = hard?.folder ?? "Face Painting";
+    const urls = [doc.leadImage?.asset?.url, ...(doc.extraPhotos?.map((p: {asset?: {url?: string | null} | null} | null) => p?.asset?.url) ?? [])].filter(
+      (u): u is string => typeof u === "string" && u.length > 0,
+    );
+    const cmsSections = (doc.detailSections ?? []).map((s: SanityServiceDetailSection | null) => ({
+      heading: pickCms(s?.heading, ""),
+      paragraph: pickCms(s?.body, ""),
+    }));
+    const hasCmsSections = cmsSections.some(
+      (s: {heading: string; paragraph: string}) =>
+        stegaClean(s.heading).trim().length > 0 || stegaClean(s.paragraph).trim().length > 0,
+    );
+    const sections =
+      hasCmsSections ? cmsSections.filter((s: {heading: string; paragraph: string}) => s.heading || s.paragraph) : (hard?.sections ?? []);
+    const faqRows = (doc.serviceFaqs ?? []).map((f: SanityServiceFaqRow | null) => ({
+      question: pickCms(f?.question, ""),
+      answer: pickCms(f?.answer, ""),
+    }));
+    const hasFaq = faqRows.some((f: {question: string; answer: string}) =>
+      stegaClean(f.question).trim().length > 0 || stegaClean(f.answer).trim().length > 0,
+    );
+    const faq = hasFaq ? faqRows : (hard?.faq ?? []);
+    const infoRows = (doc.importantInfo ?? []).filter((x: unknown): x is string => typeof x === "string");
+    const hasInfo = infoRows.some((x: string) => stegaClean(x).trim().length > 0);
+    const importantInfo = hasInfo ? infoRows : (hard?.importantInfo ?? []);
+    return {
+      id: slug,
+      name: pickCms(doc.title, hard?.name ?? slug),
+      folder,
+      cardHeading: pickCms(doc.cardHeading, hard?.cardHeading ?? ""),
+      cardParagraph: pickCms(doc.cardDescription, hard?.cardParagraph ?? ""),
+      sections: sections.length ? sections : (hard?.sections ?? []),
+      importantInfo,
+      faq,
+      remoteImageUrls: urls.length ? urls : undefined,
+    };
+  });
+}
+
 function ServiceGalleryPanel({
   images,
   isCompactLayout,
   onOpenGallery,
 }: {
-  images: BundledImageSrc[];
+  images: Array<BundledImageSrc | string>;
   isCompactLayout: boolean;
   onOpenGallery: () => void;
 }) {
@@ -467,19 +515,37 @@ function CollapsiblePanel({
   );
 }
 
-const ServicesPage: React.FC = () => {
+type ServicesPageProps = {
+  sanityServices?: SanityServiceDoc[] | null;
+  initialServiceSlug?: string | null;
+};
+
+const ServicesPage: React.FC<ServicesPageProps> = ({ sanityServices = null, initialServiceSlug = null }) => {
   const isCompactLayout = useIsCompactLayout();
   const router = useRouter();
   const [activeServiceId, setActiveServiceId] = useState<string | null>(null);
   const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null);
 
+  const displayServices = useMemo(() => {
+    if (sanityServices && sanityServices.length > 0) return mapSanityServicesToEntries(sanityServices);
+    return services;
+  }, [sanityServices]);
+
+  useEffect(() => {
+    if (!initialServiceSlug?.trim()) return;
+    setActiveServiceId(initialServiceSlug.trim());
+  }, [initialServiceSlug]);
+
   const servicesWithImages = useMemo(
     () =>
-      services.map((service) => ({
+      displayServices.map((service) => ({
         ...service,
-        galleryImages: imagesByFolder[service.folder] ?? [],
+        galleryImages:
+          service.remoteImageUrls && service.remoteImageUrls.length > 0 ?
+            service.remoteImageUrls
+          : (imagesByFolder[service.folder] ?? []),
       })),
-    []
+    [displayServices],
   );
 
   const activeService = servicesWithImages.find((service) => service.id === activeServiceId) ?? null;
@@ -521,6 +587,7 @@ const ServicesPage: React.FC = () => {
                 return (
                   <article
                     key={service.id}
+                    id={`service-${service.id}`}
                     data-native-cursor="true"
                     role="button"
                     tabIndex={0}

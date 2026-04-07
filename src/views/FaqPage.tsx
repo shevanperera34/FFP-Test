@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
+import { pickCms } from "@/lib/sanity/pickCms";
+import type { SanityFaqItemDoc } from "@/lib/sanity/siteQueries";
 import PageFrame, { contentMaxWidth, titleFont, uiFont, useIsCompactLayout } from "../components/PageFrame";
 import heroBg2 from "../assets/images/hero-bg2.png";
 import { encodePublicAssetPath } from "../utils/encodePublicAssetPath";
@@ -246,11 +248,59 @@ const faqGroups: FaqGroup[] = [
   },
 ];
 
-const FaqPage: React.FC = () => {
+const FAQ_CATEGORY_HEADINGS: Record<string, string> = {
+  "face-painting": "Face Painting",
+  "body-painting": "Body Painting",
+  "belly-painting": "Belly Painting",
+  "bling-bar": "Bling Bar",
+  "balloon-twisting": "Balloon Twisting",
+  "booking-policies": "Booking & Policies",
+  general: "General",
+};
+
+function faqGroupsFromSanity(items: SanityFaqItemDoc[]): FaqGroup[] {
+  const order: string[] = [];
+  const map = new Map<string, FaqItem[]>();
+  for (const row of items) {
+    const key = row.category?.trim() || "general";
+    if (!map.has(key)) {
+      map.set(key, []);
+      order.push(key);
+    }
+    map.get(key)!.push({
+      question: pickCms(row.question, ""),
+      answer: pickCms(row.answer, ""),
+    });
+  }
+  return order.map((key) => ({
+    heading: FAQ_CATEGORY_HEADINGS[key] ?? key.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+    items: map.get(key)!,
+  }));
+}
+
+type FaqPageProps = {
+  sanityFaqItems?: SanityFaqItemDoc[] | null;
+};
+
+const FaqPage: React.FC<FaqPageProps> = ({ sanityFaqItems = null }) => {
   const isCompactLayout = useIsCompactLayout();
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [openItemIndex, setOpenItemIndex] = useState(0);
-  const activeGroup = faqGroups[activeGroupIndex];
+
+  const displayGroups = useMemo(() => {
+    if (sanityFaqItems && sanityFaqItems.length > 0) return faqGroupsFromSanity(sanityFaqItems);
+    return faqGroups;
+  }, [sanityFaqItems]);
+
+  const activeGroup = displayGroups[activeGroupIndex] ?? displayGroups[0];
+
+  if (!activeGroup) {
+    return (
+      <PageFrame pageSlug="faq" pageTitle="FAQ | Fable Face Paint">
+        <div style={{ padding: 40, textAlign: "center" }}>No FAQ content yet.</div>
+      </PageFrame>
+    );
+  }
 
   return (
     <PageFrame pageSlug="faq" pageTitle="FAQ | Fable Face Paint">
@@ -316,11 +366,11 @@ const FaqPage: React.FC = () => {
               padding: "10px",
             }}
           >
-            {faqGroups.map((group, groupIndex) => {
+            {displayGroups.map((group, groupIndex) => {
               const selected = groupIndex === activeGroupIndex;
               return (
                 <button
-                  key={group.heading}
+                  key={`${group.heading}-${groupIndex}`}
                   type="button"
                   onClick={() => {
                     setActiveGroupIndex(groupIndex);
@@ -369,7 +419,7 @@ const FaqPage: React.FC = () => {
                 const open = openItemIndex === itemIndex;
                 return (
                   <div
-                    key={`${activeGroup.heading}-${item.question}`}
+                    key={`${activeGroup.heading}-${itemIndex}-${item.question}`}
                     data-native-cursor="true"
                     style={{
                       borderRadius: 16,

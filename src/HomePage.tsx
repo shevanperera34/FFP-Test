@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { stegaClean } from "@sanity/client/stega";
 import { useRouter } from "next/navigation";
 import PageFrame, {
   HoverButton,
@@ -42,6 +43,15 @@ import corporateLogo6 from "./assets/Corporate Logos/images__1_-removebg-preview
 import corporateLogo7 from "./assets/Corporate Logos/Seneca-logo.svg.png";
 import corporateLogo8 from "./assets/Corporate Logos/Untitled design (12).png";
 import { eventPicVerticalUrls, serviceAssetEntries } from "./generated/imageManifests";
+import type { HomepageVisualAttrs } from "./lib/sanity/homepageVisualAttrs";
+import type { HomepageDisplayCopy } from "./lib/sanity/mergeHomepageCopy";
+import type {
+  SanityFeaturedGalleryItem,
+  SanityFeaturedServiceRef,
+  SanityHomepageDoc,
+} from "./lib/sanity/homepageQuery";
+import { withBasePath } from "./config/site";
+import type { SanitySiteSettingsDoc, SanityTrustHighlightRow } from "./lib/sanity/siteQueries";
 import { encodePublicAssetPath, type BundledImageSrc } from "./utils/encodePublicAssetPath";
 
 const homeGalleryImages = [galleryImage1, galleryImage2, galleryImage3, galleryImage4, galleryImage5, galleryImage6, galleryImage7, galleryImage8];
@@ -450,33 +460,75 @@ function HomeGalleryRotationViewport({
   );
 }
 
-const homeCopy = {
-  locationLabel: "from Vaughan, ON",
-  heroHeadline: "Premium & Enchanted Event face art experience",
-  heroCtaLabel: "Book Now",
-  introHeadline: "Face painting, but make it event art.",
-  introParagraph:
-    "Fable Face Paint is a fully mobile face painting & event art service serving the GTA. Led by Milena, with a trusted team available for larger bookings, we can handle everything from private celebrations to corporate and public events.",
-  artistEyebrow: "Meet your artist",
-  artistName: "Milena",
-  smallEventsEyebrow: "Birthdays · Private parties",
-  smallEventsTitle: "Small Events",
-  smallEventsDescription: "Perfect for smaller guest lists and high-quality designs. Book a single artist for a clean, magical setup.",
-  smallEventsCtaLabel: "Explore Small Events",
-  largeEventsEyebrow: "Corporate · Festivals · Public events",
-  largeEventsBadge: "Most Popular",
-  largeEventsTitle: "Large Events",
-  largeEventsDescription: "Need higher throughput or multiple artists? This path is built for scale, structure, and crowd flow.",
-  largeEventsCtaLabel: "Explore Large Events",
-  helperNote: "Not sure which one fits? Start with the closest match, and the booking form will sort the details.",
-  trustSectionTitle: "What clients rely on",
-  gallerySectionTitle: "Real work from real events.",
-  gallerySectionDescription: "A quick look at the detailed work and atmosphere of Fable Face Paint events.",
+type HomePageProps = {
+  sanityHomepage?: SanityHomepageDoc | null;
+  sanitySiteSettings?: SanitySiteSettingsDoc | null;
+  homepageCopy: HomepageDisplayCopy;
+  homepageVisualAttrs?: HomepageVisualAttrs;
+  heroLogoAlt: string;
+  artistPhotoAlt: string;
 };
 
-const HomePage: React.FC = () => {
+const HomePage: React.FC<HomePageProps> = ({
+  sanityHomepage = null,
+  sanitySiteSettings = null,
+  homepageCopy,
+  homepageVisualAttrs = {},
+  heroLogoAlt,
+  artistPhotoAlt,
+}) => {
   const router = useRouter();
   const isCompactLayout = useIsCompactLayout();
+  const copy = homepageCopy;
+
+  const heroLogoSrc = useMemo(() => {
+    const u = sanityHomepage?.heroLogo?.asset?.url;
+    return u && u.length > 0 ? u : heroCenterLogo;
+  }, [sanityHomepage]);
+
+  const heroBgSrc = useMemo(() => {
+    const u = sanityHomepage?.heroBackgroundIllustration?.asset?.url;
+    return u && u.length > 0 ? u : heroFrameIllustration;
+  }, [sanityHomepage]);
+
+  const artistPhotoSrc = useMemo(() => {
+    const u = sanityHomepage?.artistPhoto?.asset?.url;
+    return u && u.length > 0 ? u : milenaImg;
+  }, [sanityHomepage]);
+
+  const galleryRotationImages = useMemo((): BundledImageSrc[] => {
+    const urls =
+      sanityHomepage?.featuredGalleryImages
+        ?.map((item: SanityFeaturedGalleryItem) => item?.image?.asset?.url)
+        .filter((u: string | null | undefined): u is string => Boolean(u && u.length > 0)) ?? [];
+    if (urls.length > 0) return urls;
+    return allServiceAssetImages.length > 0 ? allServiceAssetImages : homeGalleryImages;
+  }, [sanityHomepage]);
+
+  const trustDisplayItems = useMemo(() => {
+    const raw = sanitySiteSettings?.trustHighlights;
+    if (!raw?.length) return trustIndicators;
+    const allowedIcons = new Set(["shield-plus", "sparkles", "mobile", "network"]);
+    const mapped = raw
+      .filter((x: SanityTrustHighlightRow | null | undefined): x is SanityTrustHighlightRow =>
+        Boolean(x && stegaClean(x.title ?? "").trim())
+      )
+      .map((x: SanityTrustHighlightRow) => ({
+        icon: (allowedIcons.has(String(x.icon)) ? x.icon : "sparkles") as (typeof trustIndicators)[number]["icon"],
+        title: x.title ?? "",
+        subtitle: typeof x.subtitle === "string" ? x.subtitle : "",
+      }));
+    return mapped.length ? mapped : trustIndicators;
+  }, [sanitySiteSettings]);
+
+  const featuredServicesFromCms = useMemo(() => {
+    const list = sanityHomepage?.featuredServices ?? [];
+    return list.filter((s: SanityFeaturedServiceRef | null | undefined): s is SanityFeaturedServiceRef => {
+      if (!s?.slug?.current?.trim()) return false;
+      const label = stegaClean(s.cardHeading ?? s.title ?? "").trim();
+      return label.length > 0;
+    });
+  }, [sanityHomepage]);
 
   const goTo = useCallback(
     (slug: "birthdays" | "corporate" | "contact") => {
@@ -503,7 +555,7 @@ const HomePage: React.FC = () => {
           style={{
             position: "absolute",
             inset: 0,
-            backgroundImage: `url("${encodePublicAssetPath(heroFrameIllustration)}")`,
+            backgroundImage: `url("${encodePublicAssetPath(heroBgSrc)}")`,
             backgroundSize: "110% auto",
             backgroundPosition: "center -28px",
             backgroundRepeat: "no-repeat",
@@ -512,6 +564,7 @@ const HomePage: React.FC = () => {
             opacity: 1,
           }}
           aria-hidden
+          data-sanity={homepageVisualAttrs.heroBackgroundIllustration}
         />
         <div
           style={{
@@ -536,8 +589,9 @@ const HomePage: React.FC = () => {
             }}
           >
             <img
-              src={encodePublicAssetPath(heroCenterLogo)}
-              alt="Fable Face Paint logo"
+              src={encodePublicAssetPath(heroLogoSrc)}
+              alt={heroLogoAlt}
+              data-sanity={homepageVisualAttrs.heroLogo}
               style={{
                 width: "100%",
                 height: "auto",
@@ -557,7 +611,7 @@ const HomePage: React.FC = () => {
                 textShadow: "0 2px 6px rgba(0,0,0,0.42), 0 6px 18px rgba(0,0,0,0.22)",
               }}
             >
-              {homeCopy.locationLabel}
+              {copy.locationLabel}
             </p>
           </div>
           <p
@@ -572,7 +626,7 @@ const HomePage: React.FC = () => {
               textShadow: "0 4px 8px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.4)",
             }}
           >
-            {homeCopy.heroHeadline}
+            {copy.heroHeadline}
           </p>
           <HoverButton
             onClick={() => goTo("contact")}
@@ -596,7 +650,7 @@ const HomePage: React.FC = () => {
             }}
             hoverStyle={unifiedBookButtonHover}
           >
-            {homeCopy.heroCtaLabel}
+            {copy.heroCtaLabel}
           </HoverButton>
         </div>
       </section>
@@ -637,10 +691,10 @@ const HomePage: React.FC = () => {
                   textShadow: "0 3px 10px rgba(0,0,0,0.42), 0 10px 26px rgba(0,0,0,0.22)",
                 }}
               >
-                {homeCopy.introHeadline}
+                {copy.introHeadline}
               </div>
               <div style={{ marginTop: 24, maxWidth: 640, fontSize: 18, lineHeight: 1.8, opacity: 0.9, textShadow: "0 2px 8px rgba(0,0,0,0.34)" }}>
-                {homeCopy.introParagraph}
+                {copy.introParagraph}
               </div>
 
               <div
@@ -663,8 +717,9 @@ const HomePage: React.FC = () => {
                 }}
               >
                 <img
-                  src={encodePublicAssetPath(milenaImg)}
-                  alt="Milena, lead artist"
+                  src={encodePublicAssetPath(artistPhotoSrc)}
+                  alt={artistPhotoAlt}
+                  data-sanity={homepageVisualAttrs.artistPhoto}
                   style={{
                     width: 126,
                     height: 126,
@@ -677,8 +732,8 @@ const HomePage: React.FC = () => {
                   }}
                 />
                 <div style={{ display: "grid", gap: 10, paddingLeft: 6 }}>
-                  <div style={{ fontSize: 18, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.75 }}>{homeCopy.artistEyebrow}</div>
-                  <div style={{ fontSize: 34, fontWeight: 950, lineHeight: 1.02 }}>{homeCopy.artistName}</div>
+                  <div style={{ fontSize: 18, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.75 }}>{copy.artistEyebrow}</div>
+                  <div style={{ fontSize: 34, fontWeight: 950, lineHeight: 1.02 }}>{copy.artistName}</div>
                 </div>
               </div>
             </div>
@@ -703,11 +758,11 @@ const HomePage: React.FC = () => {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                  <div style={{ fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74 }}>{homeCopy.smallEventsEyebrow}</div>
+                  <div style={{ fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74 }}>{copy.smallEventsEyebrow}</div>
                 </div>
 
-                <div style={{ marginTop: 12, fontSize: 24, fontWeight: 950, fontFamily: titleFont }}>{homeCopy.smallEventsTitle}</div>
-                <div style={{ marginTop: 10, fontSize: 16, lineHeight: 1.6, opacity: 0.86 }}>{homeCopy.smallEventsDescription}</div>
+                <div style={{ marginTop: 12, fontSize: 24, fontWeight: 950, fontFamily: titleFont }}>{copy.smallEventsTitle}</div>
+                <div style={{ marginTop: 10, fontSize: 16, lineHeight: 1.6, opacity: 0.86 }}>{copy.smallEventsDescription}</div>
 
                 <HoverButton
                   onClick={() => goTo("birthdays")}
@@ -729,7 +784,7 @@ const HomePage: React.FC = () => {
                   }}
                   hoverStyle={unifiedDarkButtonHover}
                 >
-                  {homeCopy.smallEventsCtaLabel} <span aria-hidden>→</span>
+                  {copy.smallEventsCtaLabel} <span aria-hidden>→</span>
                 </HoverButton>
               </Card>
 
@@ -759,13 +814,13 @@ const HomePage: React.FC = () => {
                     opacity: 0.96,
                   }}
                 >
-                  {homeCopy.largeEventsBadge}
+                  {copy.largeEventsBadge}
                 </span>
 
-                <div style={{ fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74 }}>{homeCopy.largeEventsEyebrow}</div>
+                <div style={{ fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74 }}>{copy.largeEventsEyebrow}</div>
 
-                <div style={{ marginTop: 12, fontSize: 24, fontWeight: 950, fontFamily: titleFont }}>{homeCopy.largeEventsTitle}</div>
-                <div style={{ marginTop: 10, fontSize: 16, lineHeight: 1.6, opacity: 0.86 }}>{homeCopy.largeEventsDescription}</div>
+                <div style={{ marginTop: 12, fontSize: 24, fontWeight: 950, fontFamily: titleFont }}>{copy.largeEventsTitle}</div>
+                <div style={{ marginTop: 10, fontSize: 16, lineHeight: 1.6, opacity: 0.86 }}>{copy.largeEventsDescription}</div>
 
                 <HoverButton
                   onClick={() => goTo("corporate")}
@@ -787,7 +842,7 @@ const HomePage: React.FC = () => {
                   }}
                   hoverStyle={unifiedDarkButtonHover}
                 >
-                  {homeCopy.largeEventsCtaLabel} <span aria-hidden>→</span>
+                  {copy.largeEventsCtaLabel} <span aria-hidden>→</span>
                 </HoverButton>
               </Card>
             </div>
@@ -803,10 +858,87 @@ const HomePage: React.FC = () => {
               textShadow: "0 2px 8px rgba(0,0,0,0.34)",
             }}
           >
-            {homeCopy.helperNote}
+            {copy.helperNote}
           </div>
         </div>
       </section>
+
+      {featuredServicesFromCms.length > 0 ? (
+        <section
+          style={{
+            padding: isCompactLayout ? "32px 0 48px" : "40px 0 64px",
+            background: "transparent",
+          }}
+        >
+          <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 24px" }}>
+            <div
+              style={{
+                fontSize: "clamp(1.85rem, 3vw, 2.6rem)",
+                fontWeight: 950,
+                fontFamily: titleFont,
+                marginBottom: isCompactLayout ? 18 : 24,
+                textAlign: "center",
+                textShadow: "0 3px 10px rgba(0,0,0,0.42), 0 10px 26px rgba(0,0,0,0.22)",
+              }}
+            >
+              Featured services
+            </div>
+            <div
+              data-sanity={homepageVisualAttrs.featuredServices}
+              style={{
+                display: "grid",
+                gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(auto-fill, minmax(240px, 1fr))",
+                gap: isCompactLayout ? 16 : 20,
+              }}
+            >
+              {featuredServicesFromCms.map((svc: SanityFeaturedServiceRef) => {
+                const slug = svc.slug?.current?.trim() ?? "";
+                const heading = svc.cardHeading ?? svc.title ?? "";
+                const desc = svc.cardDescription ?? "";
+                const imgUrl = svc.leadImage?.asset?.url;
+                return (
+                  <HoverButton
+                    key={svc._id ?? slug}
+                    onClick={() => router.push(withBasePath(`/services/${slug}`))}
+                    style={{
+                      textAlign: "left",
+                      cursor: "pointer",
+                      borderRadius: 18,
+                      border: "1px solid rgba(11,11,11,0.12)",
+                      background: "#F2F0EE",
+                      color: brand.colors.ink,
+                      padding: 0,
+                      overflow: "hidden",
+                      display: "grid",
+                      gap: 0,
+                      boxShadow: "0 14px 36px rgba(0,0,0,0.12)",
+                      transition: unifiedHoverTransition,
+                    }}
+                    hoverStyle={unifiedDarkButtonHover}
+                  >
+                    {imgUrl ? (
+                      <div style={{ height: isCompactLayout ? 140 : 160, overflow: "hidden", background: "rgba(11,11,11,0.06)" }}>
+                        <img
+                          src={encodePublicAssetPath(imgUrl)}
+                          alt=""
+                          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        />
+                      </div>
+                    ) : null}
+                    <div style={{ padding: "16px 18px 18px", display: "grid", gap: 8 }}>
+                      <div style={{ fontSize: 18, fontWeight: 950, fontFamily: titleFont, lineHeight: 1.15 }}>{heading}</div>
+                      {desc ? (
+                        <div style={{ fontSize: 14, lineHeight: 1.55, opacity: 0.85 }}>{desc}</div>
+                      ) : null}
+                      <div style={{ fontSize: 13, fontWeight: 800, fontFamily: uiFont, opacity: 0.75 }}>View service →</div>
+                    </div>
+                  </HoverButton>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section
         style={{
@@ -932,7 +1064,7 @@ const HomePage: React.FC = () => {
                     textShadow: "0 3px 10px rgba(0,0,0,0.42), 0 10px 26px rgba(0,0,0,0.22)",
                   }}
                 >
-                  {homeCopy.trustSectionTitle}
+                  {copy.trustSectionTitle}
                 </div>
               </div>
             </div>
@@ -971,7 +1103,7 @@ const HomePage: React.FC = () => {
                   height: isCompactLayout ? undefined : "clamp(420px, 42vw, 520px)",
                 }}
               >
-                {trustIndicators.map((item) => (
+                {trustDisplayItems.map((item: (typeof trustIndicators)[number]) => (
                   <div
                     key={item.title}
                     style={{
@@ -1105,7 +1237,7 @@ const HomePage: React.FC = () => {
                 maxWidth: 720,
               }}
             >
-              {homeCopy.gallerySectionTitle}
+              {copy.gallerySectionTitle}
             </div>
             <div
               style={{
@@ -1115,7 +1247,7 @@ const HomePage: React.FC = () => {
                 opacity: 0.82,
               }}
             >
-              {homeCopy.gallerySectionDescription}
+              {copy.gallerySectionDescription}
             </div>
           </div>
 
@@ -1123,9 +1255,10 @@ const HomePage: React.FC = () => {
             style={{
               width: "100%",
             }}
+            data-sanity={homepageVisualAttrs.featuredGalleryImages}
           >
             <HomeGalleryRotationViewport
-              images={allServiceAssetImages.length > 0 ? allServiceAssetImages : homeGalleryImages}
+              images={galleryRotationImages}
               isCompactLayout={isCompactLayout}
             />
           </div>
