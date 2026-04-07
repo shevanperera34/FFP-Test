@@ -19,6 +19,7 @@ export function getSiteUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin;
   }
+  /** Fallback when building without VERCEL_URL (e.g. local `next build`). */
   return "https://fable-face-paint.vercel.app";
 }
 
