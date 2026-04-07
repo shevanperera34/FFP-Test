@@ -60,7 +60,7 @@ const GalleryPage: React.FC = () => {
 
   return (
     <PageFrame pageSlug="gallery" pageTitle="Gallery | Fable Face Paint">
-      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 34px" }}>
+      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 0" }}>
         <section
           style={{
             width: "100vw",

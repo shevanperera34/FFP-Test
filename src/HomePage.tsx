@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import PageFrame, {
   HoverButton,
@@ -15,6 +15,7 @@ import PageFrame, {
   unifiedHoverTransition,
   useIsCompactLayout,
 } from "./components/PageFrame";
+import GtaServiceMap from "./components/GtaServiceMap";
 import galleryImage1 from "./assets/Gallery/image-asset 1.webp";
 import galleryImage2 from "./assets/Gallery/image-asset 2.webp";
 import galleryImage3 from "./assets/Gallery/image-asset 3.webp";
@@ -59,26 +60,23 @@ const corporateLogoImages = [
   { src: corporateLogo8, scale: 1.0 },
 ];
 
-const travelAreas = [
-  "Toronto",
-  "Vaughan",
-  "Richmond Hill",
-  "Markham",
-  "Mississauga",
-  "Brampton",
-  "Oakville",
-  "Burlington",
-  "Milton",
-  "Etobicoke",
-  "North York",
-  "Scarborough",
-  "Pickering",
-  "Ajax",
-  "Whitby",
-  "Oshawa",
-  "Aurora",
-  "Newmarket",
-  "King City",
+type AwardLogoLayout = {
+  x: number; // px offset from center
+  y: number; // px offset from center
+  scale: number;
+};
+
+const corporateLogoLayoutKeys = ["logo1", "logo2", "logo3", "logo4", "logo5", "logo6", "logo7", "logo8"] as const;
+
+const corporateLogoDefaultLayouts: AwardLogoLayout[] = [
+  { x: -5.4, y: -3.8, scale: 1.2 },
+  { x: -3.4, y: 0.3, scale: 1.5 },
+  { x: -6.6, y: -3.4, scale: 2.4 },
+  { x: -6.1, y: -0.8, scale: 1.2 },
+  { x: -6.5, y: -5, scale: 1.2 },
+  { x: 0, y: 0, scale: 1.2 },
+  { x: 0, y: 0, scale: 1 },
+  { x: -5, y: -2.7, scale: 1.3 },
 ];
 
 const trustIndicators = [
@@ -474,6 +472,10 @@ function HomeGalleryRotationViewport({
   );
 }
 
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
 const homeCopy = {
   locationLabel: "across the GTA",
   heroHeadline: "Premium & Enchanted Event face art experience",
@@ -492,8 +494,6 @@ const homeCopy = {
   largeEventsDescription: "Need higher throughput or multiple artists? This path is built for scale, structure, and crowd flow.",
   largeEventsCtaLabel: "Explore Large Events",
   helperNote: "Not sure which one fits? Start with the closest match, and the booking form will sort the details.",
-  travelAreasTitle: "Serving Toronto and the Greater Toronto Area",
-  travelAreasDescription: "Available for birthdays, private parties, corporate events, and festivals across these cities:",
   trustSectionTitle: "What clients rely on",
   gallerySectionTitle: "Real work from real events.",
   gallerySectionDescription: "A quick look at the detailed work and atmosphere of Fable Face Paint events.",
@@ -502,6 +502,24 @@ const homeCopy = {
 const HomePage: React.FC = () => {
   const router = useRouter();
   const isCompactLayout = useIsCompactLayout();
+  const [isLogoEditEnabled, setIsLogoEditEnabled] = useState(false);
+  const [logoCopyState, setLogoCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [corporateLogoLayouts, setCorporateLogoLayouts] = useState<AwardLogoLayout[]>(() => corporateLogoDefaultLayouts.map((layout) => ({ ...layout })));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setIsLogoEditEnabled(params.get("logoEdit") === "1");
+  }, []);
+
+  const corporateLogoLayoutSnippet = useMemo(() => {
+    return corporateLogoLayoutKeys
+      .map((key, index) => {
+        const layout = corporateLogoLayouts[index] ?? corporateLogoDefaultLayouts[index];
+        return `${key}: { x: ${round1(layout.x)}, y: ${round1(layout.y)}, scale: ${round1(layout.scale)} }`;
+      })
+      .join("\n");
+  }, [corporateLogoLayouts]);
 
   const goTo = useCallback(
     (slug: "birthdays" | "corporate" | "contact" | "about") => {
@@ -509,6 +527,92 @@ const HomePage: React.FC = () => {
     },
     [router]
   );
+
+  const handleCorporateLogoDragStart = (index: number, event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isLogoEditEnabled || isCompactLayout) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startClientX = event.clientX;
+    const startClientY = event.clientY;
+    const startLayout = corporateLogoLayouts[index] ?? corporateLogoDefaultLayouts[index];
+    if (!startLayout) return;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - startClientX;
+      const deltaY = moveEvent.clientY - startClientY;
+      const nextX = Math.min(120, Math.max(-120, round1(startLayout.x + deltaX)));
+      const nextY = Math.min(60, Math.max(-60, round1(startLayout.y + deltaY)));
+
+      setCorporateLogoLayouts((prev) =>
+        prev.map((layout, currentIndex) =>
+          currentIndex === index
+            ? {
+                ...layout,
+                x: nextX,
+                y: nextY,
+              }
+            : layout
+        )
+      );
+    };
+
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const handleCorporateLogoResizeStart = (index: number, event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!isLogoEditEnabled || isCompactLayout) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startClientY = event.clientY;
+    const startLayout = corporateLogoLayouts[index] ?? corporateLogoDefaultLayouts[index];
+    if (!startLayout) return;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const deltaY = moveEvent.clientY - startClientY;
+      const nextScale = Math.min(2.4, Math.max(0.45, round1(startLayout.scale - deltaY * 0.01)));
+      setCorporateLogoLayouts((prev) =>
+        prev.map((layout, currentIndex) =>
+          currentIndex === index
+            ? {
+                ...layout,
+                scale: nextScale,
+              }
+            : layout
+        )
+      );
+    };
+
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const handleCopyCorporateLogoLayout = async () => {
+    try {
+      await navigator.clipboard.writeText(corporateLogoLayoutSnippet);
+      setLogoCopyState("copied");
+    } catch {
+      setLogoCopyState("failed");
+    } finally {
+      window.setTimeout(() => setLogoCopyState("idle"), 1200);
+    }
+  };
+
+  const resetCorporateLogoLayout = () => {
+    setCorporateLogoLayouts(corporateLogoDefaultLayouts.map((layout) => ({ ...layout })));
+  };
 
   return (
     <PageFrame pageSlug="home">
@@ -862,42 +966,16 @@ const HomePage: React.FC = () => {
               marginTop: 18,
               borderRadius: 18,
               border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(6,12,18,0.44)",
-              boxShadow: "0 14px 30px rgba(0,0,0,0.24)",
-              padding: isCompactLayout ? "18px 14px" : "22px 20px",
+              background: "rgba(6,12,18,0.50)",
+              boxShadow: "0 12px 26px rgba(0,0,0,0.24)",
+              padding: isCompactLayout ? "14px 12px" : "18px 16px",
               display: "grid",
-              gap: 12,
-              maxWidth: 900,
+              gap: 10,
+              width: "100%",
+              marginInline: "auto",
             }}
           >
-            <div style={{ fontSize: isCompactLayout ? 12 : 13, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.76, fontFamily: uiFont }}>
-              Travel Areas
-            </div>
-            <div style={{ fontSize: "clamp(1.45rem, 2.2vw, 2rem)", lineHeight: 1.05, fontWeight: 950, fontFamily: titleFont }}>
-              {homeCopy.travelAreasTitle}
-            </div>
-            <p style={{ margin: 0, fontSize: isCompactLayout ? 14 : 15, lineHeight: 1.6, opacity: 0.9 }}>{homeCopy.travelAreasDescription}</p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {travelAreas.map((city) => (
-                <span
-                  key={city}
-                  style={{
-                    borderRadius: 999,
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    background: "rgba(255,255,255,0.06)",
-                    padding: "6px 10px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    letterSpacing: "0.03em",
-                    color: "#F5F7FA",
-                    fontFamily: uiFont,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  {city}
-                </span>
-              ))}
-            </div>
+            <GtaServiceMap isCompactLayout={isCompactLayout} />
           </div>
         </div>
       </section>
@@ -984,11 +1062,9 @@ const HomePage: React.FC = () => {
                   style={{
                     position: "relative",
                     width: "100%",
-                    display: "flex",
-                    alignItems: "flex-end",
-                    justifyContent: isCompactLayout ? "center" : "space-between",
-                    gap: isCompactLayout ? 14 : 20,
-                    overflowX: isCompactLayout ? "hidden" : "visible",
+                    display: "grid",
+                    gap: 10,
+                    overflowX: "hidden",
                     padding: isCompactLayout ? "0 8px 6px" : "0 18px 8px",
                   }}
                 >
@@ -1068,21 +1144,33 @@ const HomePage: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    beltAwardImages.map((src, index) => (
-                      <img
-                        key={`award-belt-${index}`}
-                        src={encodePublicAssetPath(src)}
-                        alt={`Award badge ${index + 1}`}
-                        style={{
-                          flex: "0 0 auto",
-                          height: src === beltAwardImages[3] ? 162 : 122,
-                          width: "auto",
-                          objectFit: "contain",
-                          display: "block",
-                          filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
-                        }}
-                      />
-                    ))
+                    <div
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "flex-end",
+                        justifyContent: "center",
+                        gap: 20,
+                        flexWrap: "nowrap",
+                        padding: "0 6px",
+                        overflowX: "auto",
+                      }}
+                    >
+                      {beltAwardImages.map((src, index) => (
+                        <img
+                          key={`award-belt-${index}`}
+                          src={encodePublicAssetPath(src)}
+                          alt={`Award badge ${index + 1}`}
+                          style={{
+                            width: "auto",
+                            height: index === 3 ? 162 : 122,
+                            objectFit: "contain",
+                            display: "block",
+                            filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
+                          }}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -1207,6 +1295,78 @@ const HomePage: React.FC = () => {
                 gap: 10,
               }}
             >
+              {isLogoEditEnabled && !isCompactLayout ? (
+                <div
+                  style={{
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    background: "rgba(3,9,15,0.58)",
+                    padding: "8px 10px",
+                    display: "grid",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontFamily: uiFont, letterSpacing: "0.06em", textTransform: "uppercase", opacity: 0.88 }}>Logo Edit Mode</div>
+                  <div style={{ fontSize: 12, lineHeight: 1.45, opacity: 0.86 }}>
+                    Drag each corporate logo to reposition. Use the handle at the bottom-right of each logo to resize. Open with <code>?logoEdit=1</code>.
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={handleCopyCorporateLogoLayout}
+                      style={{
+                        borderRadius: 999,
+                        border: "1px solid rgba(255,255,255,0.28)",
+                        background: "rgba(255,255,255,0.08)",
+                        color: "#F2F7FD",
+                        padding: "6px 11px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "0.03em",
+                        textTransform: "uppercase",
+                        fontFamily: uiFont,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {logoCopyState === "copied" ? "Copied" : logoCopyState === "failed" ? "Copy Failed" : "Copy Layout"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetCorporateLogoLayout}
+                      style={{
+                        borderRadius: 999,
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        background: "rgba(255,255,255,0.04)",
+                        color: "#DCE9F7",
+                        padding: "6px 11px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "0.03em",
+                        textTransform: "uppercase",
+                        fontFamily: uiFont,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  <pre
+                    style={{
+                      margin: 0,
+                      fontSize: 10,
+                      lineHeight: 1.5,
+                      borderRadius: 8,
+                      border: "1px solid rgba(255,255,255,0.16)",
+                      background: "rgba(2,7,12,0.58)",
+                      padding: "8px",
+                      overflowX: "auto",
+                      color: "#DEEBFA",
+                    }}
+                  >
+                    {corporateLogoLayoutSnippet}
+                  </pre>
+                </div>
+              ) : null}
               <div
                 style={{
                   display: "grid",
@@ -1215,32 +1375,72 @@ const HomePage: React.FC = () => {
                   width: "100%",
                 }}
               >
-                {corporateLogoImages.slice(0, isCompactLayout ? 4 : 8).map((logo, index) => (
-                  <div
-                    key={`home-trusted-logo-${index}`}
-                    style={{
-                      width: "100%",
-                      height: isCompactLayout ? 62 : 74,
-                      display: "grid",
-                      placeItems: "center",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <img
-                      src={encodePublicAssetPath(logo.src)}
-                      alt={`Partner logo ${index + 1}`}
+                {corporateLogoImages.slice(0, isCompactLayout ? 4 : 8).map((logo, index) => {
+                  const layout = corporateLogoLayouts[index] ?? corporateLogoDefaultLayouts[index];
+                  return (
+                    <div
+                      key={`home-trusted-logo-${index}`}
                       style={{
-                        width: isCompactLayout ? 112 : 132,
-                        height: isCompactLayout ? 42 : 50,
-                        maxWidth: "100%",
-                        objectFit: "contain",
-                        display: "block",
-                        transform: `scale(${logo.scale})`,
-                        transformOrigin: "center center",
+                        width: "100%",
+                        height: isCompactLayout ? 62 : 74,
+                        position: "relative",
+                        overflow: "hidden",
                       }}
-                    />
-                  </div>
-                ))}
+                    >
+                      <div
+                        onPointerDown={(event) => handleCorporateLogoDragStart(index, event)}
+                        style={{
+                          position: "absolute",
+                          left: "50%",
+                          top: "50%",
+                          transform: `translate(-50%, -50%) translate(${layout.x}px, ${layout.y}px) scale(${layout.scale})`,
+                          transformOrigin: "center center",
+                          display: "grid",
+                          placeItems: "center",
+                          cursor: isLogoEditEnabled && !isCompactLayout ? "grab" : "default",
+                          userSelect: "none",
+                          border: isLogoEditEnabled && !isCompactLayout ? "1px dashed rgba(255,255,255,0.4)" : "none",
+                          borderRadius: 8,
+                          padding: isLogoEditEnabled && !isCompactLayout ? "4px 6px" : 0,
+                          background: isLogoEditEnabled && !isCompactLayout ? "rgba(4,8,13,0.28)" : "transparent",
+                        }}
+                      >
+                        <img
+                          src={encodePublicAssetPath(logo.src)}
+                          alt={`Partner logo ${index + 1}`}
+                          style={{
+                            width: isCompactLayout ? 112 : 132,
+                            height: isCompactLayout ? 42 : 50,
+                            maxWidth: "100%",
+                            objectFit: "contain",
+                            display: "block",
+                            pointerEvents: "none",
+                          }}
+                        />
+                        {isLogoEditEnabled && !isCompactLayout ? (
+                          <button
+                            type="button"
+                            onPointerDown={(event) => handleCorporateLogoResizeStart(index, event)}
+                            aria-label={`Resize corporate logo ${index + 1}`}
+                            style={{
+                              position: "absolute",
+                              right: -5,
+                              bottom: -5,
+                              width: 12,
+                              height: 12,
+                              borderRadius: 999,
+                              border: "1px solid rgba(255,255,255,0.75)",
+                              background: "rgba(211,74,168,0.95)",
+                              cursor: "nwse-resize",
+                              padding: 0,
+                              boxShadow: "0 0 8px rgba(211,74,168,0.7)",
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

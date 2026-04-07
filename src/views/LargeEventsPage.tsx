@@ -642,7 +642,7 @@ const LargeEventsPage: React.FC = () => {
 
   return (
     <PageFrame pageSlug="corporate">
-      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 26px" }}>
+      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 0" }}>
         <div style={{ display: "grid", gap: 0 }}>
           <div
             style={{

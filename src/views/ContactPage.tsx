@@ -22,7 +22,7 @@ const ContactPage: React.FC = () => {
 
   return (
     <PageFrame pageSlug="contact" pageTitle="Book an Artist Now | Fable Face Paint">
-      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 34px" }}>
+      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 0" }}>
         <section
           style={{
             width: "100vw",

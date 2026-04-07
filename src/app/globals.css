@@ -3,7 +3,7 @@
 
 @font-face {
   font-family: "Alter Bridge";
-  src: url("/fonts/AlterBridge.ttf") format("truetype");
+  src: url("/fonts/iglesia/Iglesia.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -53,8 +53,7 @@ canvas {
     0 8px 18px rgba(0, 0, 0, 0.42) !important;
 }
 
-.ffp-site-shell img[alt*="logo" i],
-.ffp-site-shell img[alt*="partner" i],
+.ffp-site-shell img[alt*="logo" i]:not([alt*="partner" i]),
 .ffp-site-shell img[src*="logo-main" i],
 .ffp-site-shell img[src*="Logo%20-%20fable%20face%20paint" i],
 .ffp-site-shell img[src*="Logo - fable face paint" i] {

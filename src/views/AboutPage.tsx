@@ -71,7 +71,7 @@ const AboutPage: React.FC = () => {
 
   return (
     <PageFrame pageSlug="about" pageTitle="About Us | Fable Face Paint">
-      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 34px" }}>
+      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 0" }}>
         <section
           style={{
             width: "100vw",
@@ -189,24 +189,47 @@ const AboutPage: React.FC = () => {
         <section style={{ padding: isCompactLayout ? "18px 0 20px" : "24px 0 26px" }}>
           <div style={{ display: "grid", gap: 14 }}>
             <h2 style={{ margin: 0, fontSize: "clamp(1.95rem, 3.1vw, 3.1rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>How We Work With You</h2>
-            <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(5, minmax(0, 1fr))", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: isCompactLayout ? "column" : "row", alignItems: "stretch" }}>
               {processSteps.map((step, index) => (
-                <div
-                  key={step.title}
-                  data-native-cursor="true"
-                  style={{
-                    borderRadius: 16,
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    background: "rgba(6,12,18,0.44)",
-                    padding: "14px 12px 16px",
-                    display: "grid",
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ fontSize: 11, letterSpacing: "0.11em", textTransform: "uppercase", opacity: 0.72, fontFamily: uiFont }}>Step {index + 1}</div>
-                  <div style={{ fontSize: 24, lineHeight: 1, fontWeight: 900, fontFamily: titleFont }}>{step.title}</div>
-                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, opacity: 0.88 }}>{step.desc}</p>
-                </div>
+                <React.Fragment key={step.title}>
+                  <div
+                    data-native-cursor="true"
+                    style={{
+                      flex: isCompactLayout ? "none" : "1 1 0",
+                      borderRadius: 16,
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(6,12,18,0.44)",
+                      padding: "14px 12px 16px",
+                      display: "grid",
+                      gap: 8,
+                      textAlign: isCompactLayout ? "center" : "left",
+                      justifyItems: isCompactLayout ? "center" : "stretch",
+                    }}
+                  >
+                    <div style={{ fontSize: 11, letterSpacing: "0.11em", textTransform: "uppercase", opacity: 0.72, fontFamily: uiFont }}>Step {index + 1}</div>
+                    <div style={{ fontSize: 24, lineHeight: 1, fontWeight: 900, fontFamily: titleFont }}>{step.title}</div>
+                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, opacity: 0.88, maxWidth: isCompactLayout ? 460 : "none" }}>{step.desc}</p>
+                  </div>
+
+                  {index < processSteps.length - 1 ? (
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        alignSelf: "center",
+                        width: isCompactLayout ? 3 : 30,
+                        height: isCompactLayout ? 30 : 3,
+                        margin: isCompactLayout ? "8px auto" : "0 8px",
+                        borderRadius: 999,
+                        background: isCompactLayout
+                          ? "linear-gradient(180deg, rgba(211,74,168,0.2), rgba(211,74,168,0.95), rgba(147,28,98,0.92), rgba(211,74,168,0.2))"
+                          : "linear-gradient(90deg, rgba(211,74,168,0.2), rgba(211,74,168,0.95), rgba(147,28,98,0.92), rgba(211,74,168,0.2))",
+                        boxShadow: "0 0 10px rgba(211,74,168,0.75), 0 0 22px rgba(147,28,98,0.55)",
+                        opacity: 0.95,
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : null}
+                </React.Fragment>
               ))}
             </div>
           </div>
@@ -225,13 +248,6 @@ const AboutPage: React.FC = () => {
               gap: 10,
             }}
           >
-            <div style={{ fontSize: 12, letterSpacing: "0.11em", textTransform: "uppercase", opacity: 0.74, fontFamily: uiFont }}>Where We Service</div>
-            <h2 style={{ margin: 0, fontSize: "clamp(1.7rem, 2.6vw, 2.65rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>
-              Serving Toronto and surrounding GTA cities
-            </h2>
-            <p style={{ margin: 0, fontSize: "clamp(0.96rem, 1.05vw, 1.03rem)", lineHeight: 1.58, opacity: 0.9 }}>
-              Hover a city to highlight its service area on the map. Active areas scale up, display their name, and reveal an image fill.
-            </p>
             <GtaServiceMap isCompactLayout={isCompactLayout} />
           </div>
         </section>
@@ -338,22 +354,6 @@ const AboutPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          </div>
-
-          <div
-            style={{
-              marginTop: 10,
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(7,22,18,0.68)",
-              boxShadow: "0 10px 24px rgba(0,0,0,0.2)",
-              padding: isCompactLayout ? "10px 12px" : "12px 14px",
-              fontSize: "clamp(0.95rem, 1vw, 1.02rem)",
-              lineHeight: 1.5,
-              color: "rgba(242,247,252,0.94)",
-            }}
-          >
-            Bookings are based on time, not guest count, so we can recommend the best-fit setup for your event and guest flow.
           </div>
         </section>
 

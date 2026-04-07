@@ -500,7 +500,7 @@ const ServicesPage: React.FC = () => {
           minHeight: "calc(100vh - 64px)",
         }}
       >
-        <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: isCompactLayout ? "18px 12px 24px" : "18px 16px 30px", display: "grid", gap: 14 }}>
+        <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: isCompactLayout ? "18px 12px 0" : "18px 16px 0", display: "grid", gap: 14 }}>
           <div style={{ display: "grid", gap: 6 }}>
             <h1 style={{ margin: 0, fontSize: "clamp(1.9rem, 3.2vw, 3.2rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>Services</h1>
             <p style={{ margin: 0, fontSize: "clamp(0.95rem, 1.05vw, 1.05rem)", lineHeight: 1.55, opacity: 0.9 }}>Click a service to learn more details.</p>
