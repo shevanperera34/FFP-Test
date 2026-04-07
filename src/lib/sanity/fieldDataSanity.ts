@@ -15,7 +15,7 @@ export function fieldDataSanity(doc: DocRef, path: string): string | undefined {
   const id = doc?._id?.trim();
   const type = doc?._type?.trim();
   if (!id || !type) return undefined;
-  const baseUrl = (process.env.NEXT_PUBLIC_SANITY_STUDIO_URL ?? "http://192.168.0.196:3333").replace(
+  const baseUrl = (process.env.NEXT_PUBLIC_SANITY_STUDIO_URL ?? "http://localhost:3333").replace(
     /\/$/,
     "",
   );

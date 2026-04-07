@@ -14,6 +14,6 @@ export const previewClient = createClient({
   /** Draft/preview + `validatePreviewUrl` must hit api.sanity.io; CDN + auth is unreliable and can break Presentation. */
   useCdn: false,
   stega: {
-    studioUrl: process.env.NEXT_PUBLIC_SANITY_STUDIO_URL || "http://192.168.0.196:3333",
+    studioUrl: process.env.NEXT_PUBLIC_SANITY_STUDIO_URL || "http://localhost:3333",
   },
 });

@@ -19,7 +19,7 @@ export function getSiteUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin;
   }
-  return "https://fablefacepaint.com";
+  return "https://fable-face-paint.vercel.app";
 }
 
 export function withBasePath(path: string): string {
