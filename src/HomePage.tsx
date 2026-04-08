@@ -58,6 +58,7 @@ import { encodePublicAssetPath, type BundledImageSrc } from "./utils/encodePubli
 const homeGalleryImages = [galleryImage1, galleryImage2, galleryImage3, galleryImage4, galleryImage5, galleryImage6, galleryImage7, galleryImage8];
 const beltAwardImages = [award1, award2, award3, awardWinner2026, award4, award5, award6];
 const mobileAwardTopRow = [award1, award2, award3];
+// Keep two rows explicit for easier visual balancing tweaks later.
 const mobileAwardBottomRow = [award4, award5, award6];
 const corporateLogoImages = [
   { src: corporateLogo1, scale: 1.08 },
