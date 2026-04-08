@@ -3,7 +3,7 @@
 
 @font-face {
   font-family: "Alter Bridge";
-  src: url("/fonts/AlterBridge.ttf") format("truetype");
+  src: url("/fonts/iglesia/Iglesia.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -17,11 +17,29 @@
   font-display: swap;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
 body {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: hidden;
   background-color: #050712;
   color: rgb(241 245 249); /* equivalent of text-slate-100 */
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
     "Segoe UI", sans-serif;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 .ffp-site-shell :is(h1, h2, h3, h4, h5, h6),
@@ -35,8 +53,7 @@ body {
     0 8px 18px rgba(0, 0, 0, 0.42) !important;
 }
 
-.ffp-site-shell img[alt*="logo" i],
-.ffp-site-shell img[alt*="partner" i],
+.ffp-site-shell img[alt*="logo" i]:not([alt*="partner" i]),
 .ffp-site-shell img[src*="logo-main" i],
 .ffp-site-shell img[src*="Logo%20-%20fable%20face%20paint" i],
 .ffp-site-shell img[src*="Logo - fable face paint" i] {

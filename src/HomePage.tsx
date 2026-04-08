@@ -16,6 +16,7 @@ import PageFrame, {
   unifiedHoverTransition,
   useIsCompactLayout,
 } from "./components/PageFrame";
+import GtaServiceMap from "./components/GtaServiceMap";
 import galleryImage1 from "./assets/Gallery/image-asset 1.webp";
 import galleryImage2 from "./assets/Gallery/image-asset 2.webp";
 import galleryImage3 from "./assets/Gallery/image-asset 3.webp";
@@ -56,6 +57,8 @@ import { encodePublicAssetPath, type BundledImageSrc } from "./utils/encodePubli
 
 const homeGalleryImages = [galleryImage1, galleryImage2, galleryImage3, galleryImage4, galleryImage5, galleryImage6, galleryImage7, galleryImage8];
 const beltAwardImages = [award1, award2, award3, awardWinner2026, award4, award5, award6];
+const mobileAwardTopRow = [award1, award2, award3];
+const mobileAwardBottomRow = [award4, award5, award6];
 const corporateLogoImages = [
   { src: corporateLogo1, scale: 1.08 },
   { src: corporateLogo2, scale: 1.08 },
@@ -65,6 +68,25 @@ const corporateLogoImages = [
   { src: corporateLogo6, scale: 1.22 },
   { src: corporateLogo7, scale: 1.02 },
   { src: corporateLogo8, scale: 1.0 },
+];
+
+type AwardLogoLayout = {
+  x: number;
+  y: number;
+  scale: number;
+};
+
+const corporateLogoLayoutKeys = ["logo1", "logo2", "logo3", "logo4", "logo5", "logo6", "logo7", "logo8"] as const;
+
+const corporateLogoDefaultLayouts: AwardLogoLayout[] = [
+  { x: -5.4, y: -3.8, scale: 1.2 },
+  { x: -3.4, y: 0.3, scale: 1.5 },
+  { x: -6.6, y: -3.4, scale: 2.4 },
+  { x: -6.1, y: -0.8, scale: 1.2 },
+  { x: -6.5, y: -5, scale: 1.2 },
+  { x: 0, y: 0, scale: 1.2 },
+  { x: 0, y: 0, scale: 1 },
+  { x: -5, y: -2.7, scale: 1.3 },
 ];
 
 const trustIndicators = [
@@ -460,6 +482,10 @@ function HomeGalleryRotationViewport({
   );
 }
 
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
 type HomePageProps = {
   sanityHomepage?: SanityHomepageDoc | null;
   sanitySiteSettings?: SanitySiteSettingsDoc | null;
@@ -530,8 +556,115 @@ const HomePage: React.FC<HomePageProps> = ({
     });
   }, [sanityHomepage]);
 
+  const [isLogoEditEnabled, setIsLogoEditEnabled] = useState(false);
+  const [logoCopyState, setLogoCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [corporateLogoLayouts, setCorporateLogoLayouts] = useState<AwardLogoLayout[]>(() =>
+    corporateLogoDefaultLayouts.map((layout) => ({ ...layout }))
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setIsLogoEditEnabled(params.get("logoEdit") === "1");
+  }, []);
+
+  const corporateLogoLayoutSnippet = useMemo(() => {
+    return corporateLogoLayoutKeys
+      .map((key, index) => {
+        const layout = corporateLogoLayouts[index] ?? corporateLogoDefaultLayouts[index];
+        return `${key}: { x: ${round1(layout.x)}, y: ${round1(layout.y)}, scale: ${round1(layout.scale)} }`;
+      })
+      .join("\n");
+  }, [corporateLogoLayouts]);
+
+  const handleCorporateLogoDragStart = (index: number, event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isLogoEditEnabled || isCompactLayout) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startClientX = event.clientX;
+    const startClientY = event.clientY;
+    const startLayout = corporateLogoLayouts[index] ?? corporateLogoDefaultLayouts[index];
+    if (!startLayout) return;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - startClientX;
+      const deltaY = moveEvent.clientY - startClientY;
+      const nextX = Math.min(120, Math.max(-120, round1(startLayout.x + deltaX)));
+      const nextY = Math.min(60, Math.max(-60, round1(startLayout.y + deltaY)));
+
+      setCorporateLogoLayouts((prev) =>
+        prev.map((layout, currentIndex) =>
+          currentIndex === index
+            ? {
+                ...layout,
+                x: nextX,
+                y: nextY,
+              }
+            : layout
+        )
+      );
+    };
+
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const handleCorporateLogoResizeStart = (index: number, event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!isLogoEditEnabled || isCompactLayout) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const startClientY = event.clientY;
+    const startLayout = corporateLogoLayouts[index] ?? corporateLogoDefaultLayouts[index];
+    if (!startLayout) return;
+
+    const onMove = (moveEvent: PointerEvent) => {
+      const deltaY = moveEvent.clientY - startClientY;
+      const nextScale = Math.min(2.4, Math.max(0.45, round1(startLayout.scale - deltaY * 0.01)));
+      setCorporateLogoLayouts((prev) =>
+        prev.map((layout, currentIndex) =>
+          currentIndex === index
+            ? {
+                ...layout,
+                scale: nextScale,
+              }
+            : layout
+        )
+      );
+    };
+
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const handleCopyCorporateLogoLayout = async () => {
+    try {
+      await navigator.clipboard.writeText(corporateLogoLayoutSnippet);
+      setLogoCopyState("copied");
+    } catch {
+      setLogoCopyState("failed");
+    } finally {
+      window.setTimeout(() => setLogoCopyState("idle"), 1200);
+    }
+  };
+
+  const resetCorporateLogoLayout = () => {
+    setCorporateLogoLayouts(corporateLogoDefaultLayouts.map((layout) => ({ ...layout })));
+  };
+
   const goTo = useCallback(
-    (slug: "birthdays" | "corporate" | "contact") => {
+    (slug: "birthdays" | "corporate" | "contact" | "about") => {
       router.push(canonicalPathBySlug[slug]);
     },
     [router]
@@ -542,13 +675,13 @@ const HomePage: React.FC<HomePageProps> = ({
       <section
         style={{
           position: "relative",
-          minHeight: "calc(100vh - 60px)",
+          minHeight: isCompactLayout ? "min(84svh, 760px)" : "calc(100vh - 60px)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "flex-start",
-          paddingTop: "8vh",
-          padding: "8vh 24px 80px",
+          paddingTop: isCompactLayout ? "3.5vh" : "8vh",
+          padding: isCompactLayout ? "3.5vh 14px 34px" : "8vh 24px 80px",
         }}
       >
         <div
@@ -556,8 +689,8 @@ const HomePage: React.FC<HomePageProps> = ({
             position: "absolute",
             inset: 0,
             backgroundImage: `url("${encodePublicAssetPath(heroBgSrc)}")`,
-            backgroundSize: "110% auto",
-            backgroundPosition: "center -28px",
+            backgroundSize: isCompactLayout ? "cover" : "110% auto",
+            backgroundPosition: isCompactLayout ? "center top" : "center -28px",
             backgroundRepeat: "no-repeat",
             pointerEvents: "none",
             mixBlendMode: "normal",
@@ -575,17 +708,17 @@ const HomePage: React.FC<HomePageProps> = ({
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
-            maxWidth: 900,
+            maxWidth: isCompactLayout ? 480 : 900,
           }}
         >
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              alignItems: "flex-end",
-              width: "35%",
+              alignItems: isCompactLayout ? "center" : "flex-end",
+              width: isCompactLayout ? "min(176px, 48vw)" : "28%",
               maxWidth: "min(720px, 92vw)",
-              marginBottom: 20,
+              marginBottom: isCompactLayout ? 16 : 20,
             }}
           >
             <img
@@ -603,11 +736,11 @@ const HomePage: React.FC<HomePageProps> = ({
               style={{
                 fontFamily: "'Cinzel', serif",
                 fontWeight: 700,
-                fontSize: "clamp(0.55rem, 1.2vw, 0.7rem)",
+                fontSize: isCompactLayout ? "clamp(0.6rem, 2.8vw, 0.78rem)" : "clamp(0.55rem, 1.2vw, 0.7rem)",
                 color: "rgba(255,255,255,0.65)",
                 margin: "4px 0 0",
                 letterSpacing: "0.12em",
-                textTransform: "capitalize",
+                textTransform: "none",
                 textShadow: "0 2px 6px rgba(0,0,0,0.42), 0 6px 18px rgba(0,0,0,0.22)",
               }}
             >
@@ -618,12 +751,13 @@ const HomePage: React.FC<HomePageProps> = ({
             style={{
               fontFamily: '"Unifraktur Cook", serif',
               fontWeight: 900,
-              fontSize: "clamp(2.85rem, 8vw, 5rem)",
+              fontSize: isCompactLayout ? "clamp(2.2rem, 12vw, 3.65rem)" : "clamp(2.85rem, 8vw, 5rem)",
               color: "#FFFFFF",
-              margin: "0 0 6px",
-              lineHeight: 1.0,
+              margin: isCompactLayout ? "0" : "0 0 6px",
+              lineHeight: isCompactLayout ? 0.96 : 1.0,
               letterSpacing: "0.02em",
               textShadow: "0 4px 8px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.4)",
+              maxWidth: isCompactLayout ? "min(370px, 94vw)" : undefined,
             }}
           >
             {copy.heroHeadline}
@@ -634,11 +768,11 @@ const HomePage: React.FC<HomePageProps> = ({
               cursor: "pointer",
               border: "1px solid #931C62",
               borderRadius: 8,
-              marginTop: 28,
-              padding: "16px 40px",
-              minWidth: 220,
+              marginTop: isCompactLayout ? 18 : 28,
+              padding: isCompactLayout ? "11px 28px" : "16px 40px",
+              minWidth: isCompactLayout ? 172 : 220,
               fontWeight: 700,
-              fontSize: 20,
+              fontSize: isCompactLayout ? 15 : 20,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
               background: "#931C62",
@@ -657,14 +791,14 @@ const HomePage: React.FC<HomePageProps> = ({
 
       <section
         style={{
-          padding: "96px 0",
+          padding: isCompactLayout ? "62px 0 52px" : "96px 0",
           background: "transparent",
-          minHeight: "calc(100vh - 72px)",
+          minHeight: isCompactLayout ? "auto" : "calc(100vh - 72px)",
           display: "flex",
           alignItems: "center",
         }}
       >
-        <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 24px" }}>
+        <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: isCompactLayout ? "0 16px" : "0 24px" }}>
           <div
             style={{
               display: "grid",
@@ -678,7 +812,7 @@ const HomePage: React.FC<HomePageProps> = ({
               style={{
                 paddingTop: 0,
                 maxWidth: 560,
-                marginTop: -10,
+                marginTop: isCompactLayout ? 0 : -10,
               }}
             >
               <div
@@ -693,59 +827,94 @@ const HomePage: React.FC<HomePageProps> = ({
               >
                 {copy.introHeadline}
               </div>
-              <div style={{ marginTop: 24, maxWidth: 640, fontSize: 18, lineHeight: 1.8, opacity: 0.9, textShadow: "0 2px 8px rgba(0,0,0,0.34)" }}>
+              <div
+                style={{
+                  marginTop: isCompactLayout ? 18 : 24,
+                  maxWidth: 640,
+                  fontSize: isCompactLayout ? 16 : 18,
+                  lineHeight: isCompactLayout ? 1.62 : 1.8,
+                  opacity: 0.9,
+                  textShadow: "0 2px 8px rgba(0,0,0,0.34)",
+                }}
+              >
                 {copy.introParagraph}
               </div>
 
-              <div
-                data-native-cursor="true"
-                style={{
-                  marginTop: 32,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 44,
-                  padding: "32px 36px 32px 48px",
-                  minHeight: 220,
-                  borderRadius: 18,
-                  background: "#F2F0EE",
-                  color: brand.colors.ink,
-                  border: "1px solid rgba(11,11,11,0.10)",
-                  boxShadow: "0 18px 44px rgba(0,0,0,0.18)",
-                  backdropFilter: "blur(10px)",
-                  width: "100%",
-                  maxWidth: 860,
-                }}
-              >
-                <img
-                  src={encodePublicAssetPath(artistPhotoSrc)}
-                  alt={artistPhotoAlt}
-                  data-sanity={homepageVisualAttrs.artistPhoto}
+              <div data-native-cursor="true" style={{ marginTop: isCompactLayout ? 24 : 32 }}>
+                <HoverButton
+                  onClick={() => goTo("about")}
+                  ariaLabel="Meet your artist and learn more about Fable Face Paint"
                   style={{
-                    width: 126,
-                    height: 126,
-                    borderRadius: 999,
-                    objectFit: "cover",
-                    objectPosition: "center 30%",
-                    transform: "scale(1.32)",
-                    border: "1px solid rgba(255,255,255,0.18)",
-                    boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: isCompactLayout ? "column" : "row",
+                    alignItems: isCompactLayout ? "center" : "center",
+                    textAlign: isCompactLayout ? "center" : "left",
+                    gap: isCompactLayout ? 14 : 44,
+                    padding: isCompactLayout ? "18px 14px" : "32px 36px 32px 48px",
+                    minHeight: isCompactLayout ? 0 : 220,
+                    borderRadius: 18,
+                    background: "#F2F0EE",
+                    color: brand.colors.ink,
+                    border: "1px solid rgba(11,11,11,0.10)",
+                    boxShadow: "0 18px 44px rgba(0,0,0,0.18)",
+                    backdropFilter: "blur(10px)",
+                    width: "100%",
+                    maxWidth: 860,
+                    transition: unifiedHoverTransition,
                   }}
-                />
-                <div style={{ display: "grid", gap: 10, paddingLeft: 6 }}>
-                  <div style={{ fontSize: 18, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.75 }}>{copy.artistEyebrow}</div>
-                  <div style={{ fontSize: 34, fontWeight: 950, lineHeight: 1.02 }}>{copy.artistName}</div>
-                </div>
+                  hoverStyle={{
+                    transform: "translateY(-2px)",
+                    background: "#FFFFFF",
+                    boxShadow: "0 20px 52px rgba(0,0,0,0.22)",
+                    color: brand.colors.ink,
+                  }}
+                >
+                  <img
+                    src={encodePublicAssetPath(artistPhotoSrc)}
+                    alt={artistPhotoAlt}
+                    data-sanity={homepageVisualAttrs.artistPhoto}
+                    style={{
+                      width: isCompactLayout ? 108 : 126,
+                      height: isCompactLayout ? 108 : 126,
+                      borderRadius: 999,
+                      objectFit: "cover",
+                      objectPosition: "center 30%",
+                      transform: isCompactLayout ? "scale(1.08)" : "scale(1.32)",
+                      border: "1px solid rgba(255,255,255,0.18)",
+                      boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+                    }}
+                  />
+                  <div style={{ display: "grid", gap: 8, paddingLeft: isCompactLayout ? 0 : 6, justifyItems: isCompactLayout ? "center" : "start" }}>
+                    <div
+                      style={{
+                        fontSize: isCompactLayout ? 12 : 18,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        opacity: 0.75,
+                      }}
+                    >
+                      {copy.artistEyebrow}
+                    </div>
+                    <div style={{ fontSize: isCompactLayout ? 30 : 34, fontWeight: 950, lineHeight: 1.02, maxWidth: "100%", wordBreak: "break-word" }}>
+                      {copy.artistName}
+                    </div>
+                    <div style={{ fontSize: isCompactLayout ? 11 : 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.65, fontFamily: uiFont }}>
+                      Learn more about Milena and the team
+                    </div>
+                  </div>
+                </HoverButton>
               </div>
             </div>
 
             <div
               style={{
                 display: "grid",
-                gap: 24,
+                gap: isCompactLayout ? 16 : 24,
                 width: "100%",
                 maxWidth: 420,
                 justifySelf: isCompactLayout ? "stretch" : "end",
-                paddingTop: 8,
+                paddingTop: isCompactLayout ? 0 : 8,
               }}
             >
               <Card
@@ -769,9 +938,9 @@ const HomePage: React.FC<HomePageProps> = ({
                   style={{
                     marginTop: 14,
                     cursor: "pointer",
-                    border: "1px solid rgba(11,11,11,0.14)",
-                    background: "rgba(255,255,255,0.28)",
-                    color: brand.colors.ink,
+                    border: "1px solid #15554E",
+                    background: "linear-gradient(135deg, #1A7D6C 0%, #15554E 100%)",
+                    color: "#FFFFFF",
                     borderRadius: 12,
                     padding: "12px 14px",
                     fontFamily: uiFont,
@@ -780,9 +949,16 @@ const HomePage: React.FC<HomePageProps> = ({
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 8,
+                    boxShadow: "0 10px 24px rgba(21,85,78,0.24)",
                     transition: unifiedHoverTransition,
                   }}
-                  hoverStyle={unifiedDarkButtonHover}
+                  hoverStyle={{
+                    transform: "translateY(-1px)",
+                    background: "#15554E",
+                    boxShadow: "0 14px 30px rgba(21,85,78,0.34)",
+                    color: "#FFFFFF",
+                    opacity: 1,
+                  }}
                 >
                   {copy.smallEventsCtaLabel} <span aria-hidden>→</span>
                 </HoverButton>
@@ -796,27 +972,8 @@ const HomePage: React.FC<HomePageProps> = ({
                   border: "1px solid rgba(211,74,168,0.65)",
                   boxShadow: "0 18px 44px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(211,74,168,0.18)",
                   backdropFilter: "blur(10px)",
-                  paddingBottom: 52,
                 }}
               >
-                <span
-                  style={{
-                    position: "absolute",
-                    bottom: -14,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    fontSize: 13,
-                    fontWeight: 900,
-                    padding: "6px 14px",
-                    borderRadius: 999,
-                    background: "rgba(147, 28, 98, 0.24)",
-                    border: "1px solid rgba(211,74,168,0.65)",
-                    opacity: 0.96,
-                  }}
-                >
-                  {copy.largeEventsBadge}
-                </span>
-
                 <div style={{ fontSize: 14, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74 }}>{copy.largeEventsEyebrow}</div>
 
                 <div style={{ marginTop: 12, fontSize: 24, fontWeight: 950, fontFamily: titleFont }}>{copy.largeEventsTitle}</div>
@@ -827,9 +984,9 @@ const HomePage: React.FC<HomePageProps> = ({
                   style={{
                     marginTop: 14,
                     cursor: "pointer",
-                    border: "1px solid rgba(11,11,11,0.14)",
-                    background: "rgba(255,255,255,0.28)",
-                    color: brand.colors.ink,
+                    border: "1px solid #931C62",
+                    background: "linear-gradient(135deg, #B61C78 0%, #8E185A 100%)",
+                    color: "#FFFFFF",
                     borderRadius: 12,
                     padding: "12px 14px",
                     fontFamily: uiFont,
@@ -838,6 +995,7 @@ const HomePage: React.FC<HomePageProps> = ({
                     display: "inline-flex",
                     alignItems: "center",
                     gap: 8,
+                    boxShadow: "0 10px 24px rgba(147,28,98,0.24)",
                     transition: unifiedHoverTransition,
                   }}
                   hoverStyle={unifiedDarkButtonHover}
@@ -859,6 +1017,24 @@ const HomePage: React.FC<HomePageProps> = ({
             }}
           >
             {copy.helperNote}
+          </div>
+
+          <div
+            data-native-cursor="true"
+            style={{
+              marginTop: 18,
+              borderRadius: 18,
+              border: "1px solid rgba(255,255,255,0.16)",
+              background: "rgba(6,12,18,0.50)",
+              boxShadow: "0 12px 26px rgba(0,0,0,0.24)",
+              padding: isCompactLayout ? "14px 12px" : "18px 16px",
+              display: "grid",
+              gap: 10,
+              width: "100%",
+              marginInline: "auto",
+            }}
+          >
+            <GtaServiceMap isCompactLayout={isCompactLayout} />
           </div>
         </div>
       </section>
@@ -1022,29 +1198,116 @@ const HomePage: React.FC<HomePageProps> = ({
                   style={{
                     position: "relative",
                     width: "100%",
-                    display: "flex",
-                    alignItems: "flex-end",
-                    justifyContent: isCompactLayout ? "flex-start" : "space-between",
-                    gap: isCompactLayout ? 14 : 20,
-                    overflowX: isCompactLayout ? "auto" : "visible",
+                    display: "grid",
+                    gap: 10,
+                    overflowX: "hidden",
                     padding: isCompactLayout ? "0 8px 6px" : "0 18px 8px",
                   }}
                 >
-                  {beltAwardImages.map((src, index) => (
-                    <img
-                      key={`award-belt-${index}`}
-                      src={encodePublicAssetPath(src)}
-                      alt={`Award badge ${index + 1}`}
+                  {isCompactLayout ? (
+                    <div
                       style={{
-                        flex: "0 0 auto",
-                        height: src === beltAwardImages[3] ? (isCompactLayout ? 104 : 162) : isCompactLayout ? 78 : 122,
-                        width: "auto",
-                        objectFit: "contain",
-                        display: "block",
-                        filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
+                        width: "100%",
+                        display: "grid",
+                        gap: 10,
+                        padding: "0 4px",
                       }}
-                    />
-                  ))}
+                    >
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                          alignItems: "end",
+                          justifyItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        {mobileAwardTopRow.map((src, index) => (
+                          <img
+                            key={`award-mobile-top-${index}`}
+                            src={encodePublicAssetPath(src)}
+                            alt={`Award badge ${index + 1}`}
+                            style={{
+                              width: "100%",
+                              maxWidth: 124,
+                              maxHeight: 88,
+                              objectFit: "contain",
+                              display: "block",
+                              filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <img
+                          src={encodePublicAssetPath(awardWinner2026)}
+                          alt="Best rated winner badge"
+                          style={{
+                            width: "auto",
+                            height: 112,
+                            objectFit: "contain",
+                            display: "block",
+                            filter: "drop-shadow(0 10px 14px rgba(0,0,0,0.28))",
+                          }}
+                        />
+                      </div>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                          alignItems: "end",
+                          justifyItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        {mobileAwardBottomRow.map((src, index) => (
+                          <img
+                            key={`award-mobile-bottom-${index}`}
+                            src={encodePublicAssetPath(src)}
+                            alt={`Award badge ${index + 4}`}
+                            style={{
+                              width: "100%",
+                              maxWidth: 124,
+                              maxHeight: 88,
+                              objectFit: "contain",
+                              display: "block",
+                              filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "flex-end",
+                        justifyContent: "center",
+                        gap: 20,
+                        flexWrap: "nowrap",
+                        padding: "0 6px",
+                        overflowX: "auto",
+                      }}
+                    >
+                      {beltAwardImages.map((src, index) => (
+                        <img
+                          key={`award-belt-${index}`}
+                          src={encodePublicAssetPath(src)}
+                          alt={`Award badge ${index + 1}`}
+                          style={{
+                            width: "auto",
+                            height: index === 3 ? 162 : 122,
+                            objectFit: "contain",
+                            display: "block",
+                            filter: "drop-shadow(0 8px 12px rgba(0,0,0,0.24))",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1168,6 +1431,78 @@ const HomePage: React.FC<HomePageProps> = ({
                 gap: 10,
               }}
             >
+              {isLogoEditEnabled && !isCompactLayout ? (
+                <div
+                  style={{
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    background: "rgba(3,9,15,0.58)",
+                    padding: "8px 10px",
+                    display: "grid",
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontFamily: uiFont, letterSpacing: "0.06em", textTransform: "uppercase", opacity: 0.88 }}>Logo Edit Mode</div>
+                  <div style={{ fontSize: 12, lineHeight: 1.45, opacity: 0.86 }}>
+                    Drag each corporate logo to reposition. Use the handle at the bottom-right of each logo to resize. Open with <code>?logoEdit=1</code>.
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={handleCopyCorporateLogoLayout}
+                      style={{
+                        borderRadius: 999,
+                        border: "1px solid rgba(255,255,255,0.28)",
+                        background: "rgba(255,255,255,0.08)",
+                        color: "#F2F7FD",
+                        padding: "6px 11px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "0.03em",
+                        textTransform: "uppercase",
+                        fontFamily: uiFont,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {logoCopyState === "copied" ? "Copied" : logoCopyState === "failed" ? "Copy Failed" : "Copy Layout"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetCorporateLogoLayout}
+                      style={{
+                        borderRadius: 999,
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        background: "rgba(255,255,255,0.04)",
+                        color: "#DCE9F7",
+                        padding: "6px 11px",
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: "0.03em",
+                        textTransform: "uppercase",
+                        fontFamily: uiFont,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Reset
+                    </button>
+                  </div>
+                  <pre
+                    style={{
+                      margin: 0,
+                      fontSize: 10,
+                      lineHeight: 1.5,
+                      borderRadius: 8,
+                      border: "1px solid rgba(255,255,255,0.16)",
+                      background: "rgba(2,7,12,0.58)",
+                      padding: "8px",
+                      overflowX: "auto",
+                      color: "#DEEBFA",
+                    }}
+                  >
+                    {corporateLogoLayoutSnippet}
+                  </pre>
+                </div>
+              ) : null}
               <div
                 style={{
                   display: "grid",
@@ -1176,29 +1511,72 @@ const HomePage: React.FC<HomePageProps> = ({
                   width: "100%",
                 }}
               >
-                {corporateLogoImages.slice(0, isCompactLayout ? 4 : 8).map((logo, index) => (
-                  <div
-                    key={`home-trusted-logo-${index}`}
-                    style={{
-                      width: "100%",
-                      height: isCompactLayout ? 62 : 74,
-                      display: "grid",
-                      placeItems: "center",
-                    }}
-                  >
-                    <img
-                      src={encodePublicAssetPath(logo.src)}
-                      alt={`Partner logo ${index + 1}`}
+                {corporateLogoImages.slice(0, isCompactLayout ? 4 : 8).map((logo, index) => {
+                  const layout = corporateLogoLayouts[index] ?? corporateLogoDefaultLayouts[index];
+                  return (
+                    <div
+                      key={`home-trusted-logo-${index}`}
                       style={{
-                        height: isCompactLayout ? 42 : 52,
-                        width: "auto",
-                        maxWidth: "96%",
-                        objectFit: "contain",
-                        display: "block",
+                        width: "100%",
+                        height: isCompactLayout ? 62 : 74,
+                        position: "relative",
+                        overflow: "hidden",
                       }}
-                    />
-                  </div>
-                ))}
+                    >
+                      <div
+                        onPointerDown={(event) => handleCorporateLogoDragStart(index, event)}
+                        style={{
+                          position: "absolute",
+                          left: "50%",
+                          top: "50%",
+                          transform: `translate(-50%, -50%) translate(${layout.x}px, ${layout.y}px) scale(${layout.scale})`,
+                          transformOrigin: "center center",
+                          display: "grid",
+                          placeItems: "center",
+                          cursor: isLogoEditEnabled && !isCompactLayout ? "grab" : "default",
+                          userSelect: "none",
+                          border: isLogoEditEnabled && !isCompactLayout ? "1px dashed rgba(255,255,255,0.4)" : "none",
+                          borderRadius: 8,
+                          padding: isLogoEditEnabled && !isCompactLayout ? "4px 6px" : 0,
+                          background: isLogoEditEnabled && !isCompactLayout ? "rgba(4,8,13,0.28)" : "transparent",
+                        }}
+                      >
+                        <img
+                          src={encodePublicAssetPath(logo.src)}
+                          alt={`Partner logo ${index + 1}`}
+                          style={{
+                            width: isCompactLayout ? 112 : 132,
+                            height: isCompactLayout ? 42 : 50,
+                            maxWidth: "100%",
+                            objectFit: "contain",
+                            display: "block",
+                            pointerEvents: "none",
+                          }}
+                        />
+                        {isLogoEditEnabled && !isCompactLayout ? (
+                          <button
+                            type="button"
+                            onPointerDown={(event) => handleCorporateLogoResizeStart(index, event)}
+                            aria-label={`Resize corporate logo ${index + 1}`}
+                            style={{
+                              position: "absolute",
+                              right: -5,
+                              bottom: -5,
+                              width: 12,
+                              height: 12,
+                              borderRadius: 999,
+                              border: "1px solid rgba(255,255,255,0.75)",
+                              background: "rgba(211,74,168,0.95)",
+                              cursor: "nwse-resize",
+                              padding: 0,
+                              boxShadow: "0 0 8px rgba(211,74,168,0.7)",
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

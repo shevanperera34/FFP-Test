@@ -1,24 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import footerLogo from "../assets/My Logos and PFPs/Logo - fable face paint (1).png";
-import LiquidEther, { type LiquidEtherProps } from "./LiquidEther";
 
-/** WebGL mounts after hydration so SSR + Presentation iframe match the first client paint. */
-function LiquidEtherAfterHydration(props: LiquidEtherProps) {
-  const [ready, setReady] = useState(false);
-  useEffect(() => setReady(true), []);
-  if (!ready) {
-    return (
-      <div
-        aria-hidden
-        className={`w-full h-full relative overflow-hidden pointer-events-none touch-none ${props.className ?? ""}`}
-        style={props.style}
-      />
-    );
-  }
-  return <LiquidEther {...props} />;
-}
+const LiquidEther = dynamic(() => import("./LiquidEther"), { ssr: false });
 
 type FooterPage = "home" | "services" | "gallery" | "about" | "contact";
 
@@ -51,7 +36,7 @@ export default function IkigaiFooter({ onNavigate, brandName }: IkigaiFooterProp
   return (
     <footer className="relative pt-10 border-t border-[#EDE6F7]/20 bg-[#9A0E63] overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
-        <LiquidEtherAfterHydration
+        <LiquidEther
           colors={["#9A0E63", "#D34AA8", "#EDE6F7"]}
           mouseForce={20}
           cursorSize={100}
