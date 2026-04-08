@@ -2,8 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { stegaClean } from "@sanity/client/stega";
-import { pickCms } from "@/lib/sanity/pickCms";
-import type { SanityServiceDetailSection, SanityServiceDoc, SanityServiceFaqRow } from "@/lib/sanity/siteQueries";
+import { pickCms, pickCmsImageUrl } from "@/lib/sanity/pickCms";
+import type {
+  SanityServiceDetailSection,
+  SanityServiceDoc,
+  SanityServiceFaqRow,
+  SanityServicesListingPageDoc,
+} from "@/lib/sanity/siteQueries";
 import { useRouter } from "next/navigation";
 import PageFrame, {
   HoverButton,
@@ -22,6 +27,8 @@ import { encodePublicAssetPath, type BundledImageSrc } from "../utils/encodePubl
 type ServiceSection = {
   heading: string;
   paragraph: string;
+  imageUrl?: string;
+  imageAlt?: string;
 };
 
 type ServiceFaqItem = {
@@ -335,16 +342,28 @@ function mapSanityServicesToEntries(docs: SanityServiceDoc[]): ServiceEntry[] {
     const urls = [doc.leadImage?.asset?.url, ...(doc.extraPhotos?.map((p: {asset?: {url?: string | null} | null} | null) => p?.asset?.url) ?? [])].filter(
       (u): u is string => typeof u === "string" && u.length > 0,
     );
-    const cmsSections = (doc.detailSections ?? []).map((s: SanityServiceDetailSection | null) => ({
-      heading: pickCms(s?.heading, ""),
-      paragraph: pickCms(s?.body, ""),
-    }));
+    const cmsSections = (doc.detailSections ?? []).map((s: SanityServiceDetailSection | null) => {
+      const url = s?.image?.asset?.url;
+      const trimmed = typeof url === "string" ? url.trim() : "";
+      return {
+        heading: pickCms(s?.heading, ""),
+        paragraph: pickCms(s?.body, ""),
+        imageUrl: trimmed.length > 0 ? trimmed : undefined,
+        imageAlt: typeof s?.image?.alt === "string" ? s.image.alt : "",
+      };
+    });
     const hasCmsSections = cmsSections.some(
-      (s: {heading: string; paragraph: string}) =>
-        stegaClean(s.heading).trim().length > 0 || stegaClean(s.paragraph).trim().length > 0,
+      (s: {heading: string; paragraph: string; imageUrl?: string}) =>
+        stegaClean(s.heading).trim().length > 0 ||
+        stegaClean(s.paragraph).trim().length > 0 ||
+        Boolean(s.imageUrl && s.imageUrl.length > 0),
     );
     const sections =
-      hasCmsSections ? cmsSections.filter((s: {heading: string; paragraph: string}) => s.heading || s.paragraph) : (hard?.sections ?? []);
+      hasCmsSections ?
+        cmsSections.filter(
+          (s: {heading: string; paragraph: string; imageUrl?: string}) => s.heading || s.paragraph || Boolean(s.imageUrl),
+        )
+      : (hard?.sections ?? []);
     const faqRows = (doc.serviceFaqs ?? []).map((f: SanityServiceFaqRow | null) => ({
       question: pickCms(f?.question, ""),
       answer: pickCms(f?.answer, ""),
@@ -517,10 +536,15 @@ function CollapsiblePanel({
 
 type ServicesPageProps = {
   sanityServices?: SanityServiceDoc[] | null;
+  sanityServicesListing?: SanityServicesListingPageDoc | null;
   initialServiceSlug?: string | null;
 };
 
-const ServicesPage: React.FC<ServicesPageProps> = ({ sanityServices = null, initialServiceSlug = null }) => {
+const ServicesPage: React.FC<ServicesPageProps> = ({
+  sanityServices = null,
+  sanityServicesListing = null,
+  initialServiceSlug = null,
+}) => {
   const isCompactLayout = useIsCompactLayout();
   const router = useRouter();
   const [activeServiceId, setActiveServiceId] = useState<string | null>(null);
@@ -550,6 +574,13 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ sanityServices = null, init
 
   const activeService = servicesWithImages.find((service) => service.id === activeServiceId) ?? null;
 
+  const servicesPageBg = pickCmsImageUrl(sanityServicesListing?.pageBackground?.asset?.url, mossBackground);
+  const servicesEyebrowRaw = sanityServicesListing?.eyebrow;
+  const servicesEyebrow =
+    typeof servicesEyebrowRaw === "string" && stegaClean(servicesEyebrowRaw).trim().length > 0 ? servicesEyebrowRaw : null;
+  const servicesTitle = pickCms(sanityServicesListing?.pageTitle, "Services");
+  const servicesIntro = pickCms(sanityServicesListing?.intro, "Click a service to learn more details.");
+
   return (
     <PageFrame pageSlug="services" pageTitle="Services | Fable Face Paint">
       <div
@@ -557,7 +588,7 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ sanityServices = null, init
           width: "100vw",
           marginLeft: "calc(50% - 50vw)",
           marginRight: "calc(50% - 50vw)",
-          backgroundImage: `linear-gradient(180deg, rgba(4,10,14,0.78) 0%, rgba(4,10,14,0.74) 100%), url("${encodePublicAssetPath(mossBackground)}")`,
+          backgroundImage: `linear-gradient(180deg, rgba(4,10,14,0.78) 0%, rgba(4,10,14,0.74) 100%), url("${encodePublicAssetPath(servicesPageBg)}")`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
@@ -568,8 +599,15 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ sanityServices = null, init
       >
         <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: isCompactLayout ? "18px 12px 24px" : "18px 16px 30px", display: "grid", gap: 14 }}>
           <div style={{ display: "grid", gap: 6 }}>
-            <h1 style={{ margin: 0, fontSize: "clamp(1.9rem, 3.2vw, 3.2rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>Services</h1>
-            <p style={{ margin: 0, fontSize: "clamp(0.95rem, 1.05vw, 1.05rem)", lineHeight: 1.55, opacity: 0.9 }}>Click a service to learn more details.</p>
+            {servicesEyebrow ? (
+              <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.75, fontFamily: uiFont }}>
+                {servicesEyebrow}
+              </div>
+            ) : null}
+            <h1 style={{ margin: 0, fontSize: "clamp(1.9rem, 3.2vw, 3.2rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>
+              {servicesTitle}
+            </h1>
+            <p style={{ margin: 0, fontSize: "clamp(0.95rem, 1.05vw, 1.05rem)", lineHeight: 1.55, opacity: 0.9 }}>{servicesIntro}</p>
           </div>
 
           {!activeService ? (
@@ -764,8 +802,26 @@ const ServicesPage: React.FC<ServicesPageProps> = ({ sanityServices = null, init
                 <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "minmax(0, 1fr) minmax(320px, 0.78fr)", gap: 12 }}>
                   <div style={{ display: "grid", gap: 10 }}>
                     {activeService.sections.map((section) => (
-                      <div key={`${activeService.id}-${section.heading}`} style={{ display: "grid", gap: 4 }}>
+                      <div key={`${activeService.id}-${section.heading}`} style={{ display: "grid", gap: 10 }}>
                         <div style={{ fontSize: "clamp(1.2rem, 1.6vw, 1.6rem)", lineHeight: 1.04, fontFamily: uiFont }}>{section.heading}</div>
+                        {section.imageUrl ? (
+                          <img
+                            src={encodePublicAssetPath(section.imageUrl)}
+                            alt={
+                              stegaClean(section.imageAlt ?? "").trim().length > 0 ?
+                                pickCms(section.imageAlt, "")
+                              : section.heading
+                            }
+                            style={{
+                              width: "100%",
+                              maxHeight: 280,
+                              objectFit: "cover",
+                              borderRadius: 12,
+                              border: "1px solid rgba(255,255,255,0.14)",
+                              display: "block",
+                            }}
+                          />
+                        ) : null}
                         <div style={{ fontSize: "clamp(0.95rem, 1.04vw, 1.05rem)", lineHeight: 1.58, opacity: 0.9 }}>{section.paragraph}</div>
                       </div>
                     ))}

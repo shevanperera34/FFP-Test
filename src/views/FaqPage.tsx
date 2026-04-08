@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { pickCms } from "@/lib/sanity/pickCms";
-import type { SanityFaqItemDoc } from "@/lib/sanity/siteQueries";
+import { pickCms, pickCmsImageUrl } from "@/lib/sanity/pickCms";
+import type { SanityFaqItemDoc, SanityFaqListingPageDoc } from "@/lib/sanity/siteQueries";
 import PageFrame, { contentMaxWidth, titleFont, uiFont, useIsCompactLayout } from "../components/PageFrame";
 import heroBg2 from "../assets/images/hero-bg2.png";
 import { encodePublicAssetPath } from "../utils/encodePublicAssetPath";
@@ -252,6 +252,8 @@ const FAQ_CATEGORY_HEADINGS: Record<string, string> = {
   "face-painting": "Face Painting",
   "body-painting": "Body Painting",
   "belly-painting": "Belly Painting",
+  "matte-ink-tattoos": "Matte Ink Tattoos",
+  "glitter-tattoos": "Glitter Tattoos",
   "bling-bar": "Bling Bar",
   "balloon-twisting": "Balloon Twisting",
   "booking-policies": "Booking & Policies",
@@ -280,9 +282,10 @@ function faqGroupsFromSanity(items: SanityFaqItemDoc[]): FaqGroup[] {
 
 type FaqPageProps = {
   sanityFaqItems?: SanityFaqItemDoc[] | null;
+  sanityFaqListing?: SanityFaqListingPageDoc | null;
 };
 
-const FaqPage: React.FC<FaqPageProps> = ({ sanityFaqItems = null }) => {
+const FaqPage: React.FC<FaqPageProps> = ({ sanityFaqItems = null, sanityFaqListing = null }) => {
   const isCompactLayout = useIsCompactLayout();
   const [activeGroupIndex, setActiveGroupIndex] = useState(0);
   const [openItemIndex, setOpenItemIndex] = useState(0);
@@ -291,6 +294,11 @@ const FaqPage: React.FC<FaqPageProps> = ({ sanityFaqItems = null }) => {
     if (sanityFaqItems && sanityFaqItems.length > 0) return faqGroupsFromSanity(sanityFaqItems);
     return faqGroups;
   }, [sanityFaqItems]);
+
+  const faqHeroBg = pickCmsImageUrl(sanityFaqListing?.heroBackground?.asset?.url, heroBg2);
+  const faqEyebrow = pickCms(sanityFaqListing?.eyebrow, "FAQ");
+  const faqPageTitle = pickCms(sanityFaqListing?.pageTitle, "Frequently asked questions");
+  const faqIntro = pickCms(sanityFaqListing?.intro, "Select a service category to view only that FAQ set.");
 
   const activeGroup = displayGroups[activeGroupIndex] ?? displayGroups[0];
 
@@ -310,7 +318,7 @@ const FaqPage: React.FC<FaqPageProps> = ({ sanityFaqItems = null }) => {
             width: "100vw",
             marginLeft: "calc(50% - 50vw)",
             marginRight: "calc(50% - 50vw)",
-            backgroundImage: `linear-gradient(108deg, rgba(8,12,18,0.86) 0%, rgba(8,12,18,0.64) 48%, rgba(8,12,18,0.82) 100%), url("${encodePublicAssetPath(heroBg2)}")`,
+            backgroundImage: `linear-gradient(108deg, rgba(8,12,18,0.86) 0%, rgba(8,12,18,0.64) 48%, rgba(8,12,18,0.82) 100%), url("${encodePublicAssetPath(faqHeroBg)}")`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             borderBottom: "1px solid rgba(255,255,255,0.14)",
@@ -328,7 +336,7 @@ const FaqPage: React.FC<FaqPageProps> = ({ sanityFaqItems = null }) => {
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.72, fontFamily: uiFont }}>FAQ</div>
+            <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.72, fontFamily: uiFont }}>{faqEyebrow}</div>
             <h1
               style={{
                 margin: 0,
@@ -338,10 +346,10 @@ const FaqPage: React.FC<FaqPageProps> = ({ sanityFaqItems = null }) => {
                 fontFamily: titleFont,
               }}
             >
-              Frequently asked questions
+              {faqPageTitle}
             </h1>
             <p style={{ margin: 0, maxWidth: 820, fontSize: "clamp(0.98rem, 1.18vw, 1.08rem)", lineHeight: 1.62, color: "rgba(242,247,252,0.9)" }}>
-              Select a service category to view only that FAQ set.
+              {faqIntro}
             </p>
           </div>
         </section>

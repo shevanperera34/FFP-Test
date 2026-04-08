@@ -2,6 +2,8 @@
 
 import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { stegaClean } from "@sanity/client/stega";
+import GtaServiceMap from "../components/GtaServiceMap";
 import PageFrame, {
   HoverButton,
   canonicalPathBySlug,
@@ -16,13 +18,17 @@ import heroBg2 from "../assets/images/hero-bg2.png";
 import milenaImg from "../assets/Website Photos etc_/IMG_0316 (3).jpg";
 import { eventPicHorizontalUrls } from "../generated/imageManifests";
 import { encodePublicAssetPath } from "../utils/encodePublicAssetPath";
-import { pickCms } from "@/lib/sanity/pickCms";
+import { pickCms, pickCmsImageUrl, pickCmsUrl } from "@/lib/sanity/pickCms";
 import type {
+  SanityAboutMomentImage,
   SanityAboutPageDoc,
   SanityAboutProcessRow,
   SanityAboutTestimonialRow,
   SanityAboutValueRow,
 } from "@/lib/sanity/siteQueries";
+import type { BundledImageSrc } from "../utils/encodePublicAssetPath";
+
+type AboutMomentDisplay = { src: string; alt: string };
 
 const aboutGalleryImages = eventPicHorizontalUrls;
 
@@ -75,9 +81,15 @@ type AboutPageProps = {
   sanityAbout?: SanityAboutPageDoc | null;
 };
 
+const defaultGoogleReviewsUrl = "https://www.google.com/search?q=Fable+Face+Paint+Google+Reviews";
+
 const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
   const router = useRouter();
   const isCompactLayout = useIsCompactLayout();
+
+  const heroBg = pickCmsImageUrl(sanityAbout?.heroBackground?.asset?.url, heroBg2);
+  const artistPortrait = pickCmsImageUrl(sanityAbout?.artistPhoto?.asset?.url, milenaImg);
+  const artistAlt = pickCms(sanityAbout?.artistPhoto?.alt, "Milena from Fable Face Paint");
 
   const heroEyebrow = pickCms(sanityAbout?.eyebrow, "About us");
   const heroTitle = pickCms(sanityAbout?.pageTitle, "Meet the artist behind Fable Face Paint.");
@@ -85,6 +97,24 @@ const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
     sanityAbout?.intro,
     "Professional face painting, glitter tattoos, and event art across Toronto & the GTA—blending magical design with reliable logistics. From intimate parties to high-volume events, the goal is memorable guest moments without stress on your day.",
   );
+
+  const valuesSectionTitle = pickCms(sanityAbout?.valuesSectionTitle, "What We Prioritize");
+  const valuesSectionIntro = pickCms(
+    sanityAbout?.valuesSectionIntro,
+    "The values below are editable in this page file so you can tune your brand voice quickly.",
+  );
+  const processSectionTitle = pickCms(sanityAbout?.processSectionTitle, "How We Work With You");
+  const testimonialsSectionTitle = pickCms(sanityAbout?.testimonialsSectionTitle, "What Clients Are Saying");
+  const googleReviewScore = pickCms(sanityAbout?.googleReviewScore, "5.0");
+  const googleReviewCount = pickCms(sanityAbout?.googleReviewCount, "(59)");
+  const googleReviewsUrl = pickCmsUrl(sanityAbout?.googleReviewsUrl, defaultGoogleReviewsUrl);
+  const eventMomentsTitle = pickCms(sanityAbout?.eventMomentsTitle, "Event Moments");
+
+  const bookingNoteBelowReviews = useMemo(() => {
+    const raw = sanityAbout?.bookingNoteBelowReviews;
+    if (typeof raw !== "string") return "";
+    return stegaClean(raw).trim();
+  }, [sanityAbout?.bookingNoteBelowReviews]);
 
   const displayValues = useMemo((): typeof values => {
     const cms = sanityAbout?.values;
@@ -114,15 +144,32 @@ const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
     }));
   }, [sanityAbout]);
 
+  const displayMomentImages = useMemo((): AboutMomentDisplay[] => {
+    const cms = sanityAbout?.momentImages;
+    if (cms?.length) {
+      return cms
+        .map((img: SanityAboutMomentImage | null, i: number) => {
+          const url = img?.asset?.url;
+          if (!url) return null;
+          return {src: url, alt: pickCms(img?.alt, `Event moment ${i + 1}`)};
+        })
+        .filter((x: AboutMomentDisplay | null): x is AboutMomentDisplay => x !== null);
+    }
+    return aboutGalleryImages.map((image: BundledImageSrc, i: number) => ({
+      src: encodePublicAssetPath(image),
+      alt: `Event moment ${i + 1}`,
+    }));
+  }, [sanityAbout]);
+
   return (
     <PageFrame pageSlug="about" pageTitle="About Us | Fable Face Paint">
-      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 34px" }}>
+      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 0" }}>
         <section
           style={{
             width: "100vw",
             marginLeft: "calc(50% - 50vw)",
             marginRight: "calc(50% - 50vw)",
-            backgroundImage: `linear-gradient(105deg, rgba(6,10,14,0.82) 0%, rgba(6,10,14,0.60) 44%, rgba(6,10,14,0.78) 100%), url("${encodePublicAssetPath(heroBg2)}")`,
+            backgroundImage: `linear-gradient(105deg, rgba(6,10,14,0.82) 0%, rgba(6,10,14,0.60) 44%, rgba(6,10,14,0.78) 100%), url("${encodePublicAssetPath(heroBg)}")`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -191,8 +238,8 @@ const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
               }}
             >
               <img
-                src={encodePublicAssetPath(milenaImg)}
-                alt="Milena from Fable Face Paint"
+                src={encodePublicAssetPath(artistPortrait)}
+                alt={artistAlt}
                 style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               />
             </div>
@@ -202,10 +249,8 @@ const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
         <section style={{ padding: isCompactLayout ? "26px 0 14px" : "34px 0 18px" }}>
           <div style={{ display: "grid", gap: 18 }}>
             <div style={{ display: "grid", gap: 10 }}>
-              <h2 style={{ margin: 0, fontSize: "clamp(1.95rem, 3.1vw, 3.1rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>What We Prioritize</h2>
-              <p style={{ margin: 0, maxWidth: 760, fontSize: "clamp(0.98rem, 1.15vw, 1.06rem)", lineHeight: 1.6, opacity: 0.86 }}>
-                The values below are editable in this page file so you can tune your brand voice quickly.
-              </p>
+              <h2 style={{ margin: 0, fontSize: "clamp(1.95rem, 3.1vw, 3.1rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>{valuesSectionTitle}</h2>
+              <p style={{ margin: 0, maxWidth: 760, fontSize: "clamp(0.98rem, 1.15vw, 1.06rem)", lineHeight: 1.6, opacity: 0.86 }}>{valuesSectionIntro}</p>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: 14 }}>
@@ -233,27 +278,67 @@ const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
 
         <section style={{ padding: isCompactLayout ? "18px 0 20px" : "24px 0 26px" }}>
           <div style={{ display: "grid", gap: 14 }}>
-            <h2 style={{ margin: 0, fontSize: "clamp(1.95rem, 3.1vw, 3.1rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>How We Work With You</h2>
-            <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "1fr" : "repeat(5, minmax(0, 1fr))", gap: 12 }}>
+            <h2 style={{ margin: 0, fontSize: "clamp(1.95rem, 3.1vw, 3.1rem)", lineHeight: 1.02, fontWeight: 950, fontFamily: titleFont }}>{processSectionTitle}</h2>
+            <div style={{ display: "flex", flexDirection: isCompactLayout ? "column" : "row", alignItems: "stretch" }}>
               {displayProcessSteps.map((step, index) => (
-                <div
-                  key={`${step.title}-${index}`}
-                  data-native-cursor="true"
-                  style={{
-                    borderRadius: 16,
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    background: "rgba(6,12,18,0.44)",
-                    padding: "14px 12px 16px",
-                    display: "grid",
-                    gap: 8,
-                  }}
-                >
-                  <div style={{ fontSize: 11, letterSpacing: "0.11em", textTransform: "uppercase", opacity: 0.72, fontFamily: uiFont }}>Step {index + 1}</div>
-                  <div style={{ fontSize: 24, lineHeight: 1, fontWeight: 900, fontFamily: titleFont }}>{step.title}</div>
-                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, opacity: 0.88 }}>{step.desc}</p>
-                </div>
+                <React.Fragment key={`${step.title}-${index}`}>
+                  <div
+                    data-native-cursor="true"
+                    style={{
+                      flex: isCompactLayout ? "none" : "1 1 0",
+                      borderRadius: 16,
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(6,12,18,0.44)",
+                      padding: "14px 12px 16px",
+                      display: "grid",
+                      gap: 8,
+                      textAlign: isCompactLayout ? "center" : "left",
+                      justifyItems: isCompactLayout ? "center" : "stretch",
+                    }}
+                  >
+                    <div style={{ fontSize: 11, letterSpacing: "0.11em", textTransform: "uppercase", opacity: 0.72, fontFamily: uiFont }}>Step {index + 1}</div>
+                    <div style={{ fontSize: 24, lineHeight: 1, fontWeight: 900, fontFamily: titleFont }}>{step.title}</div>
+                    <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, opacity: 0.88, maxWidth: isCompactLayout ? 460 : "none" }}>{step.desc}</p>
+                  </div>
+
+                  {index < displayProcessSteps.length - 1 ? (
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        alignSelf: "center",
+                        width: isCompactLayout ? 3 : 30,
+                        height: isCompactLayout ? 30 : 3,
+                        margin: isCompactLayout ? "8px auto" : "0 8px",
+                        borderRadius: 999,
+                        background: isCompactLayout
+                          ? "linear-gradient(180deg, rgba(211,74,168,0.2), rgba(211,74,168,0.95), rgba(147,28,98,0.92), rgba(211,74,168,0.2))"
+                          : "linear-gradient(90deg, rgba(211,74,168,0.2), rgba(211,74,168,0.95), rgba(147,28,98,0.92), rgba(211,74,168,0.2))",
+                        boxShadow: "0 0 10px rgba(211,74,168,0.75), 0 0 22px rgba(147,28,98,0.55)",
+                        opacity: 0.95,
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : null}
+                </React.Fragment>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section style={{ padding: isCompactLayout ? "4px 0 20px" : "8px 0 24px" }}>
+          <div
+            data-native-cursor="true"
+            style={{
+              borderRadius: 18,
+              border: "1px solid rgba(255,255,255,0.16)",
+              background: "rgba(6,12,18,0.50)",
+              boxShadow: "0 12px 26px rgba(0,0,0,0.24)",
+              padding: isCompactLayout ? "14px 12px" : "18px 16px",
+              display: "grid",
+              gap: 10,
+            }}
+          >
+            <GtaServiceMap isCompactLayout={isCompactLayout} />
           </div>
         </section>
 
@@ -279,7 +364,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
                 color: "#161616",
               }}
             >
-              What Clients Are Saying
+              {testimonialsSectionTitle}
             </h2>
 
             <div
@@ -298,14 +383,14 @@ const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
               <div style={{ display: "grid", gap: 2 }}>
                 <div style={{ fontSize: "clamp(1.35rem, 1.75vw, 1.8rem)", lineHeight: 1, fontFamily: uiFont, color: "#1A1A1A" }}>Google Reviews</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 40, lineHeight: 0.95, fontWeight: 900, fontFamily: titleFont, color: "#111111" }}>5.0</span>
+                  <span style={{ fontSize: 40, lineHeight: 0.95, fontWeight: 900, fontFamily: titleFont, color: "#111111" }}>{googleReviewScore}</span>
                   <span style={{ fontSize: 26, color: "#F9CA24", letterSpacing: "0.08em" }}>★★★★★</span>
-                  <span style={{ fontSize: 15, color: "rgba(20,20,20,0.66)" }}>(59)</span>
+                  <span style={{ fontSize: 15, color: "rgba(20,20,20,0.66)" }}>{googleReviewCount}</span>
                 </div>
               </div>
 
               <a
-                href="https://www.google.com/search?q=Fable+Face+Paint+Google+Reviews"
+                href={googleReviewsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -361,30 +446,32 @@ const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: 10,
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.16)",
-              background: "rgba(7,22,18,0.68)",
-              boxShadow: "0 10px 24px rgba(0,0,0,0.2)",
-              padding: isCompactLayout ? "10px 12px" : "12px 14px",
-              fontSize: "clamp(0.95rem, 1vw, 1.02rem)",
-              lineHeight: 1.5,
-              color: "rgba(242,247,252,0.94)",
-            }}
-          >
-            Bookings are based on time, not guest count, so we can recommend the best-fit setup for your event and guest flow.
-          </div>
+          {bookingNoteBelowReviews ? (
+            <div
+              style={{
+                marginTop: 10,
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.16)",
+                background: "rgba(7,22,18,0.68)",
+                boxShadow: "0 10px 24px rgba(0,0,0,0.2)",
+                padding: isCompactLayout ? "10px 12px" : "12px 14px",
+                fontSize: "clamp(0.95rem, 1vw, 1.02rem)",
+                lineHeight: 1.5,
+                color: "rgba(242,247,252,0.94)",
+              }}
+            >
+              {bookingNoteBelowReviews}
+            </div>
+          ) : null}
         </section>
 
         <section style={{ padding: isCompactLayout ? "8px 0 26px" : "12px 0 34px" }}>
           <div style={{ display: "grid", gap: 10 }}>
-            <h2 style={{ margin: 0, fontSize: "clamp(1.7rem, 2.8vw, 2.7rem)", lineHeight: 1.04, fontWeight: 950, fontFamily: titleFont }}>Event Moments</h2>
+            <h2 style={{ margin: 0, fontSize: "clamp(1.7rem, 2.8vw, 2.7rem)", lineHeight: 1.04, fontWeight: 950, fontFamily: titleFont }}>{eventMomentsTitle}</h2>
             <div style={{ display: "grid", gridTemplateColumns: isCompactLayout ? "repeat(2, minmax(0, 1fr))" : "repeat(4, minmax(0, 1fr))", gap: 10 }}>
-              {aboutGalleryImages.slice(0, isCompactLayout ? 6 : 8).map((image, index) => (
+              {displayMomentImages.slice(0, isCompactLayout ? 6 : 8).map((image, index) => (
                 <div
-                  key={`about-gallery-${index}`}
+                  key={`about-gallery-${image.src}-${index}`}
                   data-native-cursor="true"
                   style={{
                     borderRadius: 14,
@@ -395,8 +482,8 @@ const AboutPage: React.FC<AboutPageProps> = ({ sanityAbout = null }) => {
                   }}
                 >
                   <img
-                    src={encodePublicAssetPath(image)}
-                    alt={`Event moment ${index + 1}`}
+                    src={image.src}
+                    alt={image.alt}
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   />
                 </div>

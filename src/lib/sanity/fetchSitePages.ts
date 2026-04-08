@@ -3,17 +3,23 @@ import {
   aboutPageQuery,
   contactPageQuery,
   faqItemsQuery,
+  faqListingPageQuery,
   galleryImagesQuery,
+  galleryListingPageQuery,
   largeEventsPageQuery,
   servicesListQuery,
+  servicesListingPageQuery,
   siteSettingsQuery,
   smallEventsPageQuery,
   type SanityAboutPageDoc,
   type SanityContactPageDoc,
   type SanityFaqItemDoc,
+  type SanityFaqListingPageDoc,
   type SanityGalleryImageDoc,
+  type SanityGalleryListingPageDoc,
   type SanityLargeEventsPageDoc,
   type SanityServiceDoc,
+  type SanityServicesListingPageDoc,
   type SanitySiteSettingsDoc,
   type SanitySmallEventsPageDoc,
 } from "./siteQueries";
@@ -68,11 +74,32 @@ export async function fetchFaqItems(): Promise<SanityFaqItemDoc[]> {
   }, []);
 }
 
+export async function fetchFaqListingPage(): Promise<SanityFaqListingPageDoc> {
+  return safeFetch(async () => {
+    const {data} = await sanityFetch({query: faqListingPageQuery});
+    return data;
+  }, null);
+}
+
+export async function fetchServicesListingPage(): Promise<SanityServicesListingPageDoc> {
+  return safeFetch(async () => {
+    const {data} = await sanityFetch({query: servicesListingPageQuery});
+    return data;
+  }, null);
+}
+
 export async function fetchGalleryImages(): Promise<SanityGalleryImageDoc[]> {
   return safeFetch(async () => {
     const {data} = await sanityFetch({query: galleryImagesQuery});
     return data ?? [];
   }, []);
+}
+
+export async function fetchGalleryListingPage(): Promise<SanityGalleryListingPageDoc> {
+  return safeFetch(async () => {
+    const {data} = await sanityFetch({query: galleryListingPageQuery});
+    return data;
+  }, null);
 }
 
 export async function fetchServicesList(): Promise<SanityServiceDoc[]> {

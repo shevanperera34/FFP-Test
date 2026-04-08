@@ -13,6 +13,18 @@ export const aboutPageQuery = defineQuery(`*[_type == "aboutPage"][0]{
   eyebrow,
   pageTitle,
   intro,
+  heroBackground{alt, asset->{url}},
+  artistPhoto{alt, asset->{url}},
+  valuesSectionTitle,
+  valuesSectionIntro,
+  processSectionTitle,
+  testimonialsSectionTitle,
+  googleReviewScore,
+  googleReviewCount,
+  googleReviewsUrl,
+  bookingNoteBelowReviews,
+  eventMomentsTitle,
+  momentImages[]{alt, asset->{url}},
   values[]{title, text},
   processSteps[]{title, description},
   testimonials[]{quote, author, time}
@@ -37,6 +49,13 @@ export const smallEventsPageQuery = defineQuery(`*[_type == "smallEventsPage"][0
   eyebrow,
   pageTitle,
   intro,
+  heroBackground{alt, asset->{url}},
+  packagesSectionBackground{alt, asset->{url}},
+  packagesSectionIntro,
+  highlightsSectionBackground{alt, asset->{url}},
+  highlightsSectionIntro,
+  spotlightSectionBackground{alt, asset->{url}},
+  spotlightSectionIntro,
   pricingCards[]{
     packageName,
     price,
@@ -44,7 +63,8 @@ export const smallEventsPageQuery = defineQuery(`*[_type == "smallEventsPage"][0
     badge,
     bestFor[],
     includes[],
-    footnote
+    footnote,
+    cardPhoto{alt, asset->{url}}
   }
 }`);
 
@@ -54,6 +74,11 @@ export const largeEventsPageQuery = defineQuery(`*[_type == "largeEventsPage"][0
   eyebrow,
   pageTitle,
   intro,
+  heroBackground{alt, asset->{url}},
+  packagesSectionBackground{alt, asset->{url}},
+  packagesSectionIntro,
+  testimonialsSectionBackground{alt, asset->{url}},
+  testimonialsSectionIntro,
   pricingCards[]{
     packageName,
     price,
@@ -61,12 +86,31 @@ export const largeEventsPageQuery = defineQuery(`*[_type == "largeEventsPage"][0
     badge,
     bestFor[],
     includes[],
-    footnote
+    footnote,
+    cardPhoto{alt, asset->{url}}
   },
   clientLogos[]{
     alt,
     asset->{url}
   }
+}`);
+
+export const faqListingPageQuery = defineQuery(`*[_type == "faqListingPage"][0]{
+  _id,
+  _type,
+  eyebrow,
+  pageTitle,
+  intro,
+  heroBackground{alt, asset->{url}}
+}`);
+
+export const servicesListingPageQuery = defineQuery(`*[_type == "servicesListingPage"][0]{
+  _id,
+  _type,
+  eyebrow,
+  pageTitle,
+  intro,
+  pageBackground{alt, asset->{url}}
 }`);
 
 export const faqItemsQuery = defineQuery(`*[_type == "faqItem"] | order(category asc, sortOrder asc, _createdAt asc) {
@@ -90,6 +134,19 @@ export const galleryImagesQuery = defineQuery(`*[_type == "galleryImage"] | orde
   }
 }`);
 
+export const galleryListingPageQuery = defineQuery(`*[_type == "galleryListingPage"][0]{
+  _id,
+  _type,
+  eyebrow,
+  pageTitle,
+  intro,
+  heroBackground{alt, asset->{url}},
+  instagramSectionEyebrow,
+  instagramDisplayName,
+  instagramProfileUrl,
+  instagramEmbedUrl
+}`);
+
 export const servicesListQuery = defineQuery(`*[_type == "service"] | order(sortOrder asc, title asc) {
   _id,
   _type,
@@ -102,7 +159,7 @@ export const servicesListQuery = defineQuery(`*[_type == "service"] | order(sort
     alt,
     asset->{url}
   },
-  detailSections[]{heading, body},
+  detailSections[]{heading, body, image{alt, asset->{url}}},
   importantInfo[],
   serviceFaqs[]{question, answer},
   extraPhotos[]{
@@ -111,6 +168,9 @@ export const servicesListQuery = defineQuery(`*[_type == "service"] | order(sort
   }
 }`);
 
+export type SanityFaqListingPageDoc = ClientReturn<typeof faqListingPageQuery>;
+export type SanityGalleryListingPageDoc = ClientReturn<typeof galleryListingPageQuery>;
+export type SanityServicesListingPageDoc = ClientReturn<typeof servicesListingPageQuery>;
 export type SanitySiteSettingsDoc = ClientReturn<typeof siteSettingsQuery>;
 export type SanityTrustHighlightRow = NonNullable<NonNullable<SanitySiteSettingsDoc>["trustHighlights"]>[number];
 export type SanityAboutPageDoc = ClientReturn<typeof aboutPageQuery>;
@@ -125,6 +185,7 @@ export type SanityServiceDoc = NonNullable<ClientReturn<typeof servicesListQuery
 export type SanityAboutValueRow = NonNullable<NonNullable<SanityAboutPageDoc>["values"]>[number];
 export type SanityAboutProcessRow = NonNullable<NonNullable<SanityAboutPageDoc>["processSteps"]>[number];
 export type SanityAboutTestimonialRow = NonNullable<NonNullable<SanityAboutPageDoc>["testimonials"]>[number];
+export type SanityAboutMomentImage = NonNullable<NonNullable<SanityAboutPageDoc>["momentImages"]>[number];
 export type SanitySmallEventsPricingCard = NonNullable<NonNullable<SanitySmallEventsPageDoc>["pricingCards"]>[number];
 export type SanityLargeEventsPricingCard = NonNullable<NonNullable<SanityLargeEventsPageDoc>["pricingCards"]>[number];
 export type SanityServiceDetailSection = NonNullable<NonNullable<SanityServiceDoc["detailSections"]>[number]>;

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { stegaClean } from "@sanity/client/stega";
-import { pickCms } from "@/lib/sanity/pickCms";
+import { pickCms, pickCmsImageUrl } from "@/lib/sanity/pickCms";
 import type { SmallEventsVisualAttrs } from "@/lib/sanity/smallEventsVisualAttrs";
 import type { SanitySmallEventsPageDoc, SanitySmallEventsPricingCard } from "@/lib/sanity/siteQueries";
 import { useRouter } from "next/navigation";
@@ -36,6 +36,8 @@ type PricingDisplayCard = {
   includes: string[];
   badge?: string;
   footnote?: string;
+  cardPhotoUrl?: string;
+  cardPhotoAlt?: string;
 };
 
 const pricingCards: PricingDisplayCard[] = [
@@ -709,6 +711,8 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
       const fallback = pricingCards[index] ?? pricingCards[0];
       const cmsBest = (card?.bestFor ?? []).filter((b: unknown): b is string => typeof b === "string");
       const cmsInc = (card?.includes ?? []).filter((b: unknown): b is string => typeof b === "string");
+      const photoUrl = card?.cardPhoto?.asset?.url;
+      const trimmedPhoto = typeof photoUrl === "string" ? photoUrl.trim() : "";
       return {
         name: pickCms(card?.packageName, fallback.name),
         price: pickCms(card?.price, fallback.price),
@@ -717,6 +721,8 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
         includes: cmsInc.some((b: string) => stegaClean(b).trim().length > 0) ? cmsInc : fallback.includes,
         badge: pickCms(card?.badge, fallback.badge ?? ""),
         footnote: pickCms(card?.footnote, fallback.footnote ?? ""),
+        cardPhotoUrl: trimmedPhoto.length > 0 ? trimmedPhoto : undefined,
+        cardPhotoAlt: typeof card?.cardPhoto?.alt === "string" ? card.cardPhoto.alt : "",
       };
     });
   }, [sanitySmallEvents]);
@@ -729,6 +735,22 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
     () => Array.from({ length: 8 }, (_, index) => eventProofPool[index % eventProofPool.length]),
     [eventProofPool]
   );
+
+  const heroBg = pickCmsImageUrl(sanitySmallEvents?.heroBackground?.asset?.url, smallEventsHeroBackground);
+  const packagesSectionBg = pickCmsImageUrl(sanitySmallEvents?.packagesSectionBackground?.asset?.url, heroBg2);
+  const highlightsSectionBg = pickCmsImageUrl(sanitySmallEvents?.highlightsSectionBackground?.asset?.url, heroBgPink);
+  const spotlightSectionBg = pickCmsImageUrl(sanitySmallEvents?.spotlightSectionBackground?.asset?.url, heroBg2);
+  const packagesIntro = pickCms(
+    sanitySmallEvents?.packagesSectionIntro,
+    "Placeholder paragraph: add a short description of what is included in each package and how clients should choose."
+  );
+  const highlightsIntro = pickCms(
+    sanitySmallEvents?.highlightsSectionIntro,
+    "Placeholder paragraph: share a quick sentence about featured moments from recent events."
+  );
+  const spotlightIntroRaw = sanitySmallEvents?.spotlightSectionIntro;
+  const spotlightIntro =
+    typeof spotlightIntroRaw === "string" && stegaClean(spotlightIntroRaw).trim().length > 0 ? spotlightIntroRaw : null;
 
   return (
     <PageFrame pageSlug="birthdays">
@@ -743,7 +765,7 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
               borderRadius: 0,
               overflow: "hidden",
               minHeight: isCompactLayout ? "min(72vh, 560px)" : "min(78vh, 760px)",
-              backgroundImage: `linear-gradient(105deg, rgba(6,10,14,0.78) 0%, rgba(6,10,14,0.58) 44%, rgba(6,10,14,0.74) 100%), url("${encodePublicAssetPath(smallEventsHeroBackground)}")`,
+              backgroundImage: `linear-gradient(105deg, rgba(6,10,14,0.78) 0%, rgba(6,10,14,0.58) 44%, rgba(6,10,14,0.74) 100%), url("${encodePublicAssetPath(heroBg)}")`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               display: "grid",
@@ -799,7 +821,7 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
           </div>
 
           <SmallEventsSection
-            backgroundImage={encodePublicAssetPath(heroBg2)}
+            backgroundImage={encodePublicAssetPath(packagesSectionBg)}
             padding={isCompactLayout ? "24px 18px" : "34px 18px"}
             disableWhiteOverlay
           >
@@ -828,7 +850,7 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
                     textShadow: "0 2px 8px rgba(0,0,0,0.3)",
                   }}
                 >
-                  Placeholder paragraph: add a short description of what is included in each package and how clients should choose.
+                  {packagesIntro}
                 </div>
               </div>
               <div
@@ -838,6 +860,11 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
                 {displayPricingCards.map((card, index) => {
                   const featured = Boolean(card.badge);
                   const cardVisualImage = moodImages[index % moodImages.length];
+                  const cardTopImage = card.cardPhotoUrl ?? cardVisualImage;
+                  const cardTopAlt =
+                    card.cardPhotoUrl && stegaClean(card.cardPhotoAlt ?? "").trim().length > 0 ?
+                      pickCms(card.cardPhotoAlt, `${card.name} package`)
+                    : `${card.name} event preview`;
                   return (
                     <div
                       key={card.name}
@@ -888,8 +915,8 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
                         }}
                       >
                         <img
-                          src={encodePublicAssetPath(cardVisualImage)}
-                          alt={`${card.name} event preview`}
+                          src={encodePublicAssetPath(cardTopImage)}
+                          alt={cardTopAlt}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -997,7 +1024,7 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
             </div>
           </SmallEventsSection>
 
-          <SmallEventsSection backgroundImage={encodePublicAssetPath(heroBgPink)} padding={isCompactLayout ? "22px 18px" : "30px 18px"}>
+          <SmallEventsSection backgroundImage={encodePublicAssetPath(highlightsSectionBg)} padding={isCompactLayout ? "22px 18px" : "30px 18px"}>
             <div style={{ display: "grid", gap: 20 }}>
               <div style={{ display: "grid", gap: 10, justifyItems: "center" }}>
                 <div
@@ -1023,14 +1050,14 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
                     textShadow: "0 2px 8px rgba(0,0,0,0.3)",
                   }}
                 >
-                  Placeholder paragraph: share a quick sentence about featured moments from recent events.
+                  {highlightsIntro}
                 </div>
               </div>
               <EventHighlightsGallery images={horizontalEventImages} isCompactLayout={isCompactLayout} />
             </div>
           </SmallEventsSection>
 
-          <SmallEventsSection backgroundImage={encodePublicAssetPath(heroBg2)} padding={isCompactLayout ? "22px 18px 30px" : "30px 18px 40px"}>
+          <SmallEventsSection backgroundImage={encodePublicAssetPath(spotlightSectionBg)} padding={isCompactLayout ? "22px 18px 30px" : "30px 18px 40px"}>
             <div style={{ display: "grid", gap: 20 }}>
               <div
                 style={{
@@ -1045,6 +1072,21 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
               >
                 Service Spotlight
               </div>
+              {spotlightIntro ? (
+                <div
+                  style={{
+                    maxWidth: 760,
+                    margin: "0 auto",
+                    textAlign: "center",
+                    fontSize: "clamp(0.98rem, 1.2vw, 1.08rem)",
+                    lineHeight: 1.6,
+                    color: "rgba(242,247,252,0.9)",
+                    textShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {spotlightIntro}
+                </div>
+              ) : null}
               <SmallEventsServiceSpotlight isCompactLayout={isCompactLayout} />
             </div>
           </SmallEventsSection>

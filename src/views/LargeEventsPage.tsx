@@ -2,7 +2,7 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import { stegaClean } from "@sanity/client/stega";
-import { pickCms } from "@/lib/sanity/pickCms";
+import { pickCms, pickCmsImageUrl } from "@/lib/sanity/pickCms";
 import type {
   SanityLargeEventsClientLogo,
   SanityLargeEventsPageDoc,
@@ -46,6 +46,8 @@ type PricingDisplayCard = {
   includes: string[];
   badge?: string;
   footnote?: string;
+  cardPhotoUrl?: string;
+  cardPhotoAlt?: string;
 };
 
 const pricingCards: PricingDisplayCard[] = [
@@ -669,6 +671,8 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
       const fallback = pricingCards[index] ?? pricingCards[0];
       const cmsBest = (card?.bestFor ?? []).filter((b: unknown): b is string => typeof b === "string");
       const cmsInc = (card?.includes ?? []).filter((b: unknown): b is string => typeof b === "string");
+      const photoUrl = card?.cardPhoto?.asset?.url;
+      const trimmedPhoto = typeof photoUrl === "string" ? photoUrl.trim() : "";
       return {
         name: pickCms(card?.packageName, fallback.name),
         price: pickCms(card?.price, fallback.price),
@@ -677,6 +681,8 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
         includes: cmsInc.some((b: string) => stegaClean(b).trim().length > 0) ? cmsInc : fallback.includes,
         badge: pickCms(card?.badge, fallback.badge ?? ""),
         footnote: pickCms(card?.footnote, fallback.footnote ?? ""),
+        cardPhotoUrl: trimmedPhoto.length > 0 ? trimmedPhoto : undefined,
+        cardPhotoAlt: typeof card?.cardPhoto?.alt === "string" ? card.cardPhoto.alt : "",
       };
     });
   }, [sanityLargeEvents]);
@@ -688,6 +694,18 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
   const moodImages = useMemo(
     () => Array.from({ length: 8 }, (_, index) => eventProofPool[index % eventProofPool.length]),
     [eventProofPool]
+  );
+
+  const heroBg = pickCmsImageUrl(sanityLargeEvents?.heroBackground?.asset?.url, largeEventsHeroBackground);
+  const packagesSectionBg = pickCmsImageUrl(sanityLargeEvents?.packagesSectionBackground?.asset?.url, heroBgMain);
+  const testimonialsSectionBg = pickCmsImageUrl(sanityLargeEvents?.testimonialsSectionBackground?.asset?.url, heroBgWhite);
+  const packagesIntro = pickCms(
+    sanityLargeEvents?.packagesSectionIntro,
+    "Placeholder paragraph: add a short description of corporate package options and recommended artist coverage."
+  );
+  const testimonialsIntro = pickCms(
+    sanityLargeEvents?.testimonialsSectionIntro,
+    "Placeholder paragraph: add one line about reliability, execution quality, and planner confidence."
   );
 
   return (
@@ -704,7 +722,7 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
               borderRadius: 0,
               overflow: "hidden",
               minHeight: isCompactLayout ? "min(70vh, 560px)" : "min(76vh, 740px)",
-              backgroundImage: `linear-gradient(105deg, rgba(6,10,14,0.78) 0%, rgba(6,10,14,0.58) 44%, rgba(6,10,14,0.74) 100%), url("${encodePublicAssetPath(largeEventsHeroBackground)}")`,
+              backgroundImage: `linear-gradient(105deg, rgba(6,10,14,0.78) 0%, rgba(6,10,14,0.58) 44%, rgba(6,10,14,0.74) 100%), url("${encodePublicAssetPath(heroBg)}")`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               display: "grid",
@@ -749,7 +767,7 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
           </div>
 
           <SmallEventsSection
-            backgroundImage={encodePublicAssetPath(heroBgMain)}
+            backgroundImage={encodePublicAssetPath(packagesSectionBg)}
             padding={isCompactLayout ? "24px 18px" : "34px 18px"}
             disableWhiteOverlay
           >
@@ -778,7 +796,7 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
                     textShadow: "0 2px 8px rgba(0,0,0,0.3)",
                   }}
                 >
-                  Placeholder paragraph: add a short description of corporate package options and recommended artist coverage.
+                  {packagesIntro}
                 </div>
               </div>
 
@@ -786,6 +804,11 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
                 {displayPricingCards.map((card, index) => {
                   const featured = Boolean(card.badge);
                   const cardVisualImage = moodImages[(index + 2) % moodImages.length];
+                  const cardTopImage = card.cardPhotoUrl ?? cardVisualImage;
+                  const cardTopAlt =
+                    card.cardPhotoUrl && stegaClean(card.cardPhotoAlt ?? "").trim().length > 0 ?
+                      pickCms(card.cardPhotoAlt, `${card.name} package`)
+                    : `${card.name} event preview`;
                   return (
                     <div
                       key={card.name}
@@ -836,8 +859,8 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
                         }}
                       >
                         <img
-                          src={encodePublicAssetPath(cardVisualImage)}
-                          alt={`${card.name} event preview`}
+                          src={encodePublicAssetPath(cardTopImage)}
+                          alt={cardTopAlt}
                           style={{
                             width: "100%",
                             height: "100%",
@@ -945,7 +968,7 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
             </div>
           </SmallEventsSection>
 
-          <SmallEventsSection backgroundImage={encodePublicAssetPath(heroBgWhite)} padding={isCompactLayout ? "22px 18px 30px" : "30px 18px 40px"}>
+          <SmallEventsSection backgroundImage={encodePublicAssetPath(testimonialsSectionBg)} padding={isCompactLayout ? "22px 18px 30px" : "30px 18px 40px"}>
             <div style={{ display: "grid", gap: 30 }}>
               <div style={{ display: "grid", gap: 18 }}>
                 <div style={{ display: "grid", gap: 10, justifyItems: "center" }}>
@@ -972,7 +995,7 @@ const LargeEventsPage: React.FC<LargeEventsPageProps> = ({ sanityLargeEvents = n
                       textShadow: "none",
                     }}
                   >
-                    Placeholder paragraph: add one line about reliability, execution quality, and planner confidence.
+                    {testimonialsIntro}
                   </div>
                 </div>
                 <MiniGoogleReviews isCompactLayout={isCompactLayout} />

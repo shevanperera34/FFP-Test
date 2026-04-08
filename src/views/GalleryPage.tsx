@@ -18,7 +18,8 @@ import {
   serviceAssetEntries,
 } from "../generated/imageManifests";
 import { encodePublicAssetPath, type BundledImageSrc } from "../utils/encodePublicAssetPath";
-import type { SanityGalleryImageDoc } from "@/lib/sanity/siteQueries";
+import { pickCms, pickCmsImageUrl, pickCmsUrl } from "@/lib/sanity/pickCms";
+import type { SanityGalleryImageDoc, SanityGalleryListingPageDoc } from "@/lib/sanity/siteQueries";
 
 type GalleryItem = {
   src: BundledImageSrc | string;
@@ -53,18 +54,33 @@ const verticalItems: GalleryItem[] = eventPicVerticalUrls.map((src) => ({ src, t
 const horizontalItems: GalleryItem[] = eventPicHorizontalUrls.map((src) => ({ src, tag: "Event Photos" }));
 
 const bundledGalleryItems = [...serviceItems, ...verticalItems, ...horizontalItems];
-const instagramProfileUrl = "https://www.instagram.com/fablefacepaint/?hl=en";
+const defaultInstagramProfileUrl = "https://www.instagram.com/fablefacepaint/?hl=en";
+const defaultInstagramEmbedUrl = "https://www.instagram.com/fablefacepaint/embed";
 
 type GalleryPageProps = {
   sanityGallery?: SanityGalleryImageDoc[] | null;
+  sanityGalleryListing?: SanityGalleryListingPageDoc | null;
 };
 
-const GalleryPage: React.FC<GalleryPageProps> = ({ sanityGallery = null }) => {
+const GalleryPage: React.FC<GalleryPageProps> = ({ sanityGallery = null, sanityGalleryListing = null }) => {
   const isCompactLayout = useIsCompactLayout();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [activeTag, setActiveTag] = useState<string>("All");
+  const instagramEmbedHeight = isCompactLayout ? 760 : 980;
+
+  const galleryHeroBg = pickCmsImageUrl(sanityGalleryListing?.heroBackground?.asset?.url, heroBgPink);
+  const galleryEyebrow = pickCms(sanityGalleryListing?.eyebrow, "Gallery");
+  const galleryPageTitle = pickCms(sanityGalleryListing?.pageTitle, "Real event work, sorted by service.");
+  const galleryIntro = pickCms(
+    sanityGalleryListing?.intro,
+    "Use the filter chips below to swap categories. Everything visible on this page is controlled directly in this file.",
+  );
+  const instagramSectionEyebrow = pickCms(sanityGalleryListing?.instagramSectionEyebrow, "Instagram Preview");
+  const instagramDisplayName = pickCms(sanityGalleryListing?.instagramDisplayName, "@fablefacepaint");
+  const instagramProfileUrl = pickCmsUrl(sanityGalleryListing?.instagramProfileUrl, defaultInstagramProfileUrl);
+  const instagramEmbedUrl = pickCmsUrl(sanityGalleryListing?.instagramEmbedUrl, defaultInstagramEmbedUrl);
 
   const sanityGalleryItems = useMemo((): GalleryItem[] => {
     if (!sanityGallery?.length) return [];
@@ -100,13 +116,13 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ sanityGallery = null }) => {
 
   return (
     <PageFrame pageSlug="gallery" pageTitle="Gallery | Fable Face Paint">
-      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 34px" }}>
+      <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "0 18px 0" }}>
         <section
           style={{
             width: "100vw",
             marginLeft: "calc(50% - 50vw)",
             marginRight: "calc(50% - 50vw)",
-            backgroundImage: `linear-gradient(108deg, rgba(8,12,18,0.84) 0%, rgba(8,12,18,0.62) 48%, rgba(8,12,18,0.80) 100%), url("${encodePublicAssetPath(heroBgPink)}")`,
+            backgroundImage: `linear-gradient(108deg, rgba(8,12,18,0.84) 0%, rgba(8,12,18,0.62) 48%, rgba(8,12,18,0.80) 100%), url("${encodePublicAssetPath(galleryHeroBg)}")`,
             backgroundSize: "cover",
             backgroundPosition: "center",
             borderBottom: "1px solid rgba(255,255,255,0.14)",
@@ -121,7 +137,7 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ sanityGallery = null }) => {
               gap: 14,
             }}
           >
-            <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74, fontFamily: uiFont }}>Gallery</div>
+            <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.74, fontFamily: uiFont }}>{galleryEyebrow}</div>
             <h1
               style={{
                 margin: 0,
@@ -132,11 +148,9 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ sanityGallery = null }) => {
                 maxWidth: 800,
               }}
             >
-              Real event work, sorted by service.
+              {galleryPageTitle}
             </h1>
-            <p style={{ margin: 0, maxWidth: 820, fontSize: "clamp(0.98rem, 1.18vw, 1.1rem)", lineHeight: 1.6, color: "rgba(242,247,252,0.92)" }}>
-              Use the filter chips below to swap categories. Everything visible on this page is controlled directly in this file.
-            </p>
+            <p style={{ margin: 0, maxWidth: 820, fontSize: "clamp(0.98rem, 1.18vw, 1.1rem)", lineHeight: 1.6, color: "rgba(242,247,252,0.92)" }}>{galleryIntro}</p>
           </div>
         </section>
 
@@ -155,8 +169,8 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ sanityGallery = null }) => {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
               <div style={{ display: "grid", gap: 2 }}>
-                <div style={{ fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.76, fontFamily: uiFont }}>Instagram Preview</div>
-                <div style={{ fontSize: "clamp(1.2rem, 1.8vw, 1.45rem)", lineHeight: 1.1, fontWeight: 900, fontFamily: titleFont }}>@fablefacepaint</div>
+                <div style={{ fontSize: 12, letterSpacing: "0.1em", textTransform: "uppercase", opacity: 0.76, fontFamily: uiFont }}>{instagramSectionEyebrow}</div>
+                <div style={{ fontSize: "clamp(1.2rem, 1.8vw, 1.45rem)", lineHeight: 1.1, fontWeight: 900, fontFamily: titleFont }}>{instagramDisplayName}</div>
               </div>
               <a
                 href={instagramProfileUrl}
@@ -186,17 +200,17 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ sanityGallery = null }) => {
                 overflow: "hidden",
                 border: "1px solid rgba(255,255,255,0.16)",
                 background: "rgba(10,10,10,0.38)",
-                minHeight: isCompactLayout ? 470 : 620,
+                minHeight: instagramEmbedHeight,
               }}
             >
               <iframe
-                src="https://www.instagram.com/fablefacepaint/embed"
+                src={instagramEmbedUrl}
                 title="Fable Face Paint Instagram feed"
                 loading="lazy"
                 style={{
                   width: "100%",
                   height: "100%",
-                  minHeight: isCompactLayout ? 470 : 620,
+                  minHeight: instagramEmbedHeight,
                   border: "none",
                   display: "block",
                   background: "#101216",
@@ -216,9 +230,9 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ sanityGallery = null }) => {
                     setActiveTag(tag);
                     const path = pathname ?? "/gallery";
                     if (tag === "All") {
-                      router.replace(path);
+                      router.replace(path, { scroll: false });
                     } else {
-                      router.replace(`${path}?${new URLSearchParams({ tag }).toString()}`);
+                      router.replace(`${path}?${new URLSearchParams({ tag }).toString()}`, { scroll: false });
                     }
                   }}
                   style={{
