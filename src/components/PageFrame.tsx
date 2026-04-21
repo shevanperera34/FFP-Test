@@ -6,6 +6,7 @@ import grenzeBold from "../assets/fonts/Grenze/Grenze-Bold.ttf";
 import grenzeSemiBold from "../assets/fonts/Grenze/Grenze-SemiBold.ttf";
 import unifrakturCookBold from "../assets/fonts/UnifrakturCook-Bold.ttf";
 import heroBgMain from "../assets/images/hero-bg-main.png";
+const testBg = "/assets/test-bg.jpeg";
 import heroBg2 from "../assets/images/hero-bg2.png";
 import heroBgPink from "../assets/images/hero-bg-pink.png";
 import logoMain from "../assets/My Logos and PFPs/Logo - fable face paint (1).png";
@@ -99,7 +100,7 @@ const defaultSiteBackground: Required<Pick<PageBackground, "color" | "size" | "p
   overlay: string;
 } = {
   color: brand.colors.forest,
-  image: bundledSrc(heroBgMain),
+  image: testBg,
   overlay: `radial-gradient(1100px 650px at 30% 0%, rgba(211,74,168,0.18), transparent 62%),
              radial-gradient(900px 520px at 90% 12%, rgba(237,230,247,0.12), transparent 60%)`,
   size: "cover",

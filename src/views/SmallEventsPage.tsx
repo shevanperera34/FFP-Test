@@ -1093,9 +1093,15 @@ const SmallEventsPage: React.FC<SmallEventsPageProps> = ({
         </div>
       </div>
 
-      <SectionWrap title="Birthday / Private Party Inquiry" subtitle="Routes into HoneyBook (separate funnels).">
-        <HoneyBookEmbed kind="privateParty" embedId="HB_PRIVATE_PARTY_FORM_ID" tag="private_party" />
-      </SectionWrap>
+      <SmallEventsSection backgroundImage="/assets/test-bg.jpeg">
+        <div style={{ maxWidth: contentMaxWidth, margin: "0 auto", padding: "38px 22px" }}>
+          <div style={{ marginBottom: 20, display: "grid", gap: 8 }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: brand.colors.paper, fontFamily: titleFont }}>Birthday / Private Party Inquiry</div>
+            <div style={{ fontSize: 15, lineHeight: 1.65, opacity: 0.9, color: "rgba(255,255,255,0.88)" }}>Routes into HoneyBook (separate funnels).</div>
+          </div>
+          <HoneyBookEmbed kind="privateParty" embedId="HB_PRIVATE_PARTY_FORM_ID" tag="private_party" />
+        </div>
+      </SmallEventsSection>
     </PageFrame>
   );
 };
